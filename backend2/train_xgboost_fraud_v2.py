@@ -449,23 +449,33 @@ def join_cms_peer_features(prov_df: pd.DataFrame, peer_df: pd.DataFrame,
     if state_col not in peer_df.columns:
         return prov_df
 
-    # Build a state-level peer table (average across all provider types per state)
-    peer_by_state = peer_df.groupby(state_col).mean(numeric_only=True).reset_index()
+    # Kaggle has no specialty column → use 'internal medicine' as the fixed peer group.
+    # It is the largest CMS specialty (~14% of rows), giving maximum state coverage.
+    # This is an explicit design choice: every provider is benchmarked against the
+    # 'internal medicine' state peer baseline, not against the state average across all specialties,
+    # which would mix cardiologists, oncologists, etc. into a single meaningless baseline.
+    DEFAULT_SPECIALTY = "internal medicine"
+    type_col = "Rndrng_Prvdr_Type" if "Rndrng_Prvdr_Type" in peer_df.columns else None
+
+    if type_col is not None:
+        peer_specialty = peer_df[peer_df[type_col].str.lower().str.strip() == DEFAULT_SPECIALTY].copy()
+        if len(peer_specialty) == 0:
+            # fallback: use all rows grouped by state if the specialty is absent
+            peer_specialty = peer_df.copy()
+            logger.info(f"    Specialty '{DEFAULT_SPECIALTY}' not found — falling back to state-only averages")
+        else:
+            logger.info(f"    Using peer specialty: '{DEFAULT_SPECIALTY}' ({len(peer_specialty):,} rows)")
+    else:
+        peer_specialty = peer_df.copy()
+
+    peer_by_state = peer_specialty.groupby(state_col).mean(numeric_only=True).reset_index()
     peer_by_state = peer_by_state.rename(columns={state_col: "primary_state"})
 
-    # Kaggle State is a numeric CMS code (int), CMS peer table uses 2-letter abbrev (str).
-    # Both sides cast to str so the left join always succeeds (unmatched rows get NaN, imputed later).
+    # Both sides cast to str — unmatched rows get NaN, imputed later
     prov_df["primary_state"]       = prov_df["primary_state"].astype(str)
     peer_by_state["primary_state"] = peer_by_state["primary_state"].astype(str)
 
     prov_df = prov_df.merge(peer_by_state, on="primary_state", how="left")
-
-    # Compute ratio features (upcoding, volume anomaly, risk score anomaly)
-    key_col_map = {
-        "Tot_Sbmtd_Chrg"       : "total_reimbursement",
-        "Tot_Benes"            : "unique_beneficiaries",
-        "Bene_Avg_Risk_Scre"   : None,   # provider doesn't have this, skip ratio
-    }
 
     if "peer_median_Tot_Sbmtd_Chrg" in prov_df.columns:
         prov_df["charge_vs_peer_ratio"] = (
@@ -485,8 +495,11 @@ def join_cms_peer_features(prov_df: pd.DataFrame, peer_df: pd.DataFrame,
             prov_df["peer_median_Bene_Avg_Age"].replace(0, np.nan)
         )
 
+    # chronic_burden_vs_peer_risk_proxy: avg chronic cond count / peer median HCC risk score.
+    # Named *_proxy to be explicit that these are different scales (0-11 count vs 0.5-3.0 HCC).
+    # Useful as an ordinal anomaly signal — do NOT interpret as a calibrated ratio.
     if "peer_median_Bene_Avg_Risk_Scre" in prov_df.columns:
-        prov_df["avg_risk_score_vs_peer"] = (
+        prov_df["chronic_burden_vs_peer_risk_proxy"] = (
             prov_df["avg_chronic_burden"] /
             prov_df["peer_median_Bene_Avg_Risk_Scre"].replace(0, np.nan)
         )
@@ -544,7 +557,7 @@ PEER_FEATURE_COLS = [
     "charge_vs_peer_ratio",
     "benes_vs_peer_ratio",
     "avg_age_vs_peer",
-    "avg_risk_score_vs_peer",
+    "chronic_burden_vs_peer_risk_proxy",   # ordinal proxy, NOT calibrated ratio
     "peer_median_Tot_Sbmtd_Chrg",
     "peer_median_Tot_Mdcr_Pymt_Amt",
     "peer_median_Tot_Benes",
@@ -577,10 +590,16 @@ def impute_and_encode(train_df: pd.DataFrame, test_df: pd.DataFrame,
             le = LabelEncoder()
             train_df[col] = train_df[col].astype(str).fillna("UNKNOWN")
             test_df[col]  = test_df[col].astype(str).fillna("UNKNOWN")
-            le.fit(train_df[col])
+            # Inject 'UNKNOWN' as a dedicated class before fitting so unseen states
+            # at inference time map to 'UNKNOWN' rather than the alphabetically-first state.
+            all_values = pd.concat([
+                train_df[col],
+                pd.Series(["UNKNOWN"])
+            ]).unique().tolist()
+            le.fit(all_values)
             encoders[col] = le
             known = set(le.classes_)
-            test_df[col]  = test_df[col].apply(lambda x: x if x in known else le.classes_[0])
+            test_df[col]  = test_df[col].apply(lambda x: x if x in known else "UNKNOWN")
             train_df[col] = le.transform(train_df[col])
             test_df[col]  = le.transform(test_df[col])
         else:
@@ -818,7 +837,48 @@ def train_xgboost(X_train, y_train, X_val, y_val, logger) -> XGBClassifier:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 12.  EVALUATION + PLOTS
+# 12.  PER-RISK-TIER VALIDATION METRICS
+# ──────────────────────────────────────────────────────────────────────────────
+TIER_BINS   = [0.00, 0.465, 0.485, 0.520, 1.00]
+TIER_LABELS = ["Low", "Medium", "High", "Critical"]
+
+def evaluate_risk_tiers(y_true, y_prob, logger):
+    """
+    Break validation metrics down by risk tier.
+    Reports: count, actual_fraud_rate (precision), recall per tier.
+    This answers the payment-integrity question:
+      'If I work the Critical tier first, what fraction is actually fraud?'
+    """
+    logger.info("\n  Risk-Tier Validation Breakdown (Holdout Set):")
+    logger.info(f"  {'Tier':<12} {'N':>6} {'Fraud%':>8} {'Precision':>10} {'Recall':>9} {'Coverage':>10}")
+    logger.info("  " + "-" * 62)
+
+    tiers = pd.cut(y_prob, bins=TIER_BINS, labels=TIER_LABELS, right=True)
+    tier_results = []
+    total_fraud = y_true.sum()
+
+    for tier in TIER_LABELS:
+        mask = tiers == tier
+        if mask.sum() == 0:
+            logger.info(f"  {tier:<12} {'0':>6} {'—':>8} {'—':>10} {'—':>9} {'—':>10}")
+            continue
+        n          = mask.sum()
+        n_fraud    = y_true[mask].sum()
+        precision  = n_fraud / n  if n > 0 else 0.0
+        recall     = n_fraud / total_fraud if total_fraud > 0 else 0.0
+        coverage   = n / len(y_true)
+        tier_results.append({"tier": tier, "count": n, "fraud_count": n_fraud,
+                              "precision": precision, "recall": recall, "coverage": coverage})
+        logger.info(f"  {tier:<12} {n:>6,} {precision*100:>7.1f}% {precision:>10.4f} {recall:>9.4f} {coverage*100:>9.1f}%")
+
+    logger.info("  " + "-" * 62)
+    logger.info("  Precision = fraction of flagged providers who are truly fraudulent.")
+    logger.info("  Recall    = fraction of all fraudulent providers captured in tier.")
+    return tier_results
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 13.  EVALUATION + PLOTS
 # ──────────────────────────────────────────────────────────────────────────────
 def evaluate_and_plot(model, X_val, y_val, feature_cols, output_dir, logger):
     """Compute all metrics and save evaluation plots."""
@@ -905,7 +965,12 @@ def evaluate_and_plot(model, X_val, y_val, feature_cols, output_dir, logger):
     save_plot(fig, "04_feature_importance.png")
 
     logger.info(f"\n  Model plots saved to: {plot_dir}")
-    return {"roc_auc": auc, "avg_precision": ap, "f1": f1, "mcc": mcc}
+
+    # Per-risk-tier breakdown (the payment-integrity precision/recall requirement)
+    tier_metrics = evaluate_risk_tiers(y_val, y_prob, logger)
+
+    return {"roc_auc": auc, "avg_precision": ap, "f1": f1, "mcc": mcc,
+            "tier_metrics": tier_metrics}
 
 
 # ──────────────────────────────────────────────────────────────────────────────
