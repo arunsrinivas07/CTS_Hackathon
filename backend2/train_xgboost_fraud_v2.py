@@ -73,7 +73,12 @@ PATHS = {
 
 RANDOM_STATE    = 42
 TEST_SIZE       = 0.20
-FRAUD_THRESHOLD = 0.40
+
+# Shared constants — NEVER redefine locally; always import from config.py
+try:
+    from backend2.config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS
+except ImportError:
+    from config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS
 
 # CMS columns to read — all high-value fraud signals across 82 available columns
 CMS_USECOLS = [
@@ -938,8 +943,8 @@ def train_xgboost(X_train, y_train, X_val, y_val, logger) -> XGBClassifier:
 # ──────────────────────────────────────────────────────────────────────────────
 # 12.  PER-RISK-TIER VALIDATION METRICS
 # ──────────────────────────────────────────────────────────────────────────────
-TIER_BINS   = [0.00, 0.465, 0.485, 0.520, 1.00]
-TIER_LABELS = ["Low", "Medium", "High", "Critical"]
+# TIER_BINS and TIER_LABELS imported from config.py — single source of truth.
+# Do NOT redefine them here.
 
 def evaluate_risk_tiers(y_true, y_prob, logger):
     """
@@ -1125,8 +1130,8 @@ def score_providers_and_save(model, test_prov_df, feature_cols,
     result["fraud_predicted"] = fraud_pred
     result["risk_tier"]       = pd.cut(
         fraud_proba,
-        bins   = [0.00, 0.30, 0.50, 0.70, 1.00],
-        labels = ["Low", "Medium", "High", "Critical"],
+        bins   = TIER_BINS,    # from config.py — single source of truth
+        labels = TIER_LABELS,
         right  = True,
     )
 

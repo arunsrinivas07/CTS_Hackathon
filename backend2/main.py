@@ -24,14 +24,18 @@ try:
     from backend2.train_xgboost_fraud_v2 import (
         preprocess_claims, aggregate_to_provider,
         BASE_PROVIDER_FEATURES, CC_RATE_COLS, PEER_FEATURE_COLS,
-        CAT_COLS, CHRONIC_COLS, FRAUD_THRESHOLD
+        CAT_COLS, CHRONIC_COLS, build_cms_peer_benchmarks, join_cms_peer_features,
+        CMS_USECOLS
     )
+    from backend2.config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS
 except ImportError:
     from train_xgboost_fraud_v2 import (
         preprocess_claims, aggregate_to_provider,
         BASE_PROVIDER_FEATURES, CC_RATE_COLS, PEER_FEATURE_COLS,
-        CAT_COLS, CHRONIC_COLS, FRAUD_THRESHOLD
+        CAT_COLS, CHRONIC_COLS, build_cms_peer_benchmarks, join_cms_peer_features,
+        CMS_USECOLS
     )
+    from config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS
 
 MODEL_DIR       = os.path.join(CURRENT_DIR, "models", "xgboost_fraud_v2")
 PKL_PATH        = os.path.join(MODEL_DIR, "xgboost_fraud_model_v2.pkl")
@@ -98,36 +102,48 @@ def load_pipeline_artifacts():
         except Exception as e:
             print(f"LEIE Notice: {e}")
 
-    # Load CMS peer benchmarks (state-level means from prebuilt CSV if present, else build from scratch)
+    # ── CMS peer benchmarks ────────────────────────────────────────────────────
+    # We store the FULL specialty-level peer table (not pre-collapsed to state).
+    # join_cms_peer_features() handles the internal medicine specialty filtering
+    # and state-level collapse at inference time — same path as the training script.
+    # This ensures train and API use identical peer baselines.
     peer_cache_path = os.path.join(MODEL_DIR, "cms_peer_benchmarks.csv")
+
+    # Determine data path: check datasets/ then processed_data/
+    cms_candidate_paths = [
+        os.path.join(ROOT_DIR, "datasets", "CMS_PROVIDER_MASTER.csv"),
+        os.path.join(ROOT_DIR, "processed_data", "CMS_PROVIDER_MASTER.csv"),
+        CMS_PATH,
+    ]
+    cms_data_path = next((p for p in cms_candidate_paths if os.path.exists(p)), None)
+
     if os.path.exists(peer_cache_path):
         peer_lookup = pd.read_csv(peer_cache_path)
         print(f"Loaded CMS peer benchmarks from cache: {peer_cache_path}")
-    elif os.path.exists(CMS_PATH):
+        print(f"  Peer table shape: {peer_lookup.shape}")
+    elif cms_data_path:
         try:
-            print("Building CMS peer benchmarks (first-time startup)...")
-            from train_xgboost_fraud_v2 import build_cms_peer_benchmarks, CMS_USECOLS
+            print(f"Building CMS peer benchmarks from {cms_data_path} (first-time startup)...")
             import logging
             _lg = logging.getLogger("peer_startup")
             _lg.addHandler(logging.StreamHandler(sys.stdout))
             _lg.setLevel(logging.INFO)
             chunks = []
-            for chunk in pd.read_csv(CMS_PATH, usecols=CMS_USECOLS,
+            for chunk in pd.read_csv(cms_data_path, usecols=CMS_USECOLS,
                                       low_memory=False, chunksize=500_000):
                 chunks.append(chunk)
             cms_df = pd.concat(chunks, ignore_index=True)
-            from train_xgboost_fraud_v2 import build_cms_peer_benchmarks
-            peer_df = build_cms_peer_benchmarks(cms_df, _lg)
-            peer_lookup = peer_df.groupby("Rndrng_Prvdr_State_Abrvtn").mean(numeric_only=True).reset_index()
-            peer_lookup = peer_lookup.rename(columns={"Rndrng_Prvdr_State_Abrvtn": "primary_state"})
+            # Save full specialty-level table — do NOT pre-collapse here.
+            # join_cms_peer_features does the internal medicine filter + state collapse.
+            peer_lookup = build_cms_peer_benchmarks(cms_df, _lg)
             os.makedirs(MODEL_DIR, exist_ok=True)
             peer_lookup.to_csv(peer_cache_path, index=False)
-            print(f"CMS peer benchmarks built and cached: {peer_cache_path}")
+            print(f"CMS peer benchmarks built and cached ({peer_lookup.shape}): {peer_cache_path}")
         except Exception as e:
             print(f"CMS peer benchmark build failed: {e}")
             peer_lookup = pd.DataFrame()
     else:
-        print(f"CMS Provider Master not found at {CMS_PATH}. Running without peer benchmarks.")
+        print("CMS Provider Master not found. Running without peer benchmarks.")
         peer_lookup = pd.DataFrame()
 
 
@@ -223,13 +239,13 @@ def run_inference_on_df(raw_df: pd.DataFrame) -> pd.DataFrame:
         if col not in prov_df.columns:
             prov_df[col] = medians.get(col, 0.0)
 
-    # Encode categoricals
+    # Encode categoricals — map unseen states to dedicated UNKNOWN class
     for col in CAT_COLS:
         if col in prov_df.columns and col in encoders:
             le    = encoders[col]
             known = set(le.classes_)
             prov_df[col] = prov_df[col].astype(str).apply(
-                lambda x: x if x in known else le.classes_[0]
+                lambda x: x if x in known else "UNKNOWN"
             )
             prov_df[col] = le.transform(prov_df[col])
 
@@ -247,8 +263,8 @@ def run_inference_on_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     out_df["fraud_predicted"] = fraud_pred
     out_df["risk_tier"]       = pd.cut(
         fraud_proba,
-        bins   = [0.00, 0.465, 0.485, 0.520, 1.00],
-        labels = ["Low", "Medium", "High", "Critical"],
+        bins   = TIER_BINS,      # from config.py — single source of truth
+        labels = TIER_LABELS,
         right  = True,
     ).astype(str)
 
