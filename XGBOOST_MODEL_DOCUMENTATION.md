@@ -4,14 +4,15 @@
 > **Decoupled Two-Layer Architecture (Version 2 Update)**:
 > In Version 2, **HHS OIG LEIE compliance is completely decoupled from the XGBoost ML training pipeline**. 
 > - **Layer 1 (Deterministic)**: `check_leie_direct_exclusion` in `backend2/main.py` performs direct NPI/Name lookups against `LEIE_MASTER.csv` and triggers a `1.00 Critical Risk` override for active exclusions.
-> - **Layer 2 (Pure Behavioral ML)**: The XGBoost model (`train_xgboost_fraud_v2.py`) is trained on **46 pure behavioral features** (removing geographic LEIE state risk flags to eliminate bias).
+> - **Layer 2 (Pure Behavioral ML)**: The XGBoost model (`train_xgboost_fraud_v2.py`) is trained on **59 pure behavioral & CMS peer features** (removing geographic LEIE state risk flags to eliminate bias).
+> - **Single Source of Truth**: All risk tier boundaries (`TIER_BINS = [0.00, 0.465, 0.485, 0.520, 1.00]`) and decision threshold (`FRAUD_THRESHOLD = 0.40`) are defined centrally in `backend2/config.py`.
 > - **Full Technical Reference**: See [VERSION_2_MODEL_EXPLANATION.md](VERSION_2_MODEL_EXPLANATION.md) for detailed frontend schemas and hybrid scoring.
 
 ---
 
 ## 1. Executive Summary & Objective
 
-The **Medicare Provider-Level Fraud Detection Engine (V2)** is an end-to-end Machine Learning pipeline designed to detect fraudulent billing patterns across Medicare providers. Driven by **XGBoost (Extreme Gradient Boosting)**, the system evaluates provider-level billing anomalies, physician stacking, ghost beneficiary post-death billing, diagnosis/procedure code densities, and CMS peer benchmarks (specialty × state billing ratios).
+The **Medicare Provider-Level Fraud Detection Engine (V2)** is an end-to-end Machine Learning pipeline designed to detect fraudulent billing patterns across Medicare providers. Driven by **XGBoost (Extreme Gradient Boosting)**, the system evaluates provider-level billing anomalies, physician stacking, ghost beneficiary post-death billing, diagnosis/procedure code densities, and **CMS peer benchmarks** (specialty × state billing ratios across 8.2M CMS records).
 
 ---
 
@@ -23,14 +24,14 @@ The V2 pipeline script is structured into **14 distinct, modular steps**:
  ┌─────────────────────────────────────────────────────────────────────────────┐
  │ STEP 0: IMPORTS                                                             │
  │   • Core Data Science: NumPy, Pandas, Scikit-Learn, XGBoost                 │
- │   • Plotting: Matplotlib, Seaborn                                           │
+ │   • Shared Config: FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS (config.py)     │
  └──────────────────────────────────────┬──────────────────────────────────────┘
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
  │ STEP 1: CONFIGURATION & PATH RESOLUTION                                     │
  │   • Datasets: KAGGLE_MASTER_TRAIN.csv, KAGGLE_MASTER_TEST.csv,             │
  │     CMS_PROVIDER_MASTER.csv                                                 │
- │   • Hyperparameters (TEST_SIZE=0.20, FRAUD_THRESHOLD=0.40)                  │
+ │   • Hyperparameters (TEST_SIZE=0.20, Stratified 5-Fold CV)                  │
  └──────────────────────────────────────┬──────────────────────────────────────┘
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
@@ -40,7 +41,7 @@ The V2 pipeline script is structured into **14 distinct, modular steps**:
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
  │ STEP 3: DATA LOADING (`load_data`)                                          │
- │   • Ingests Kaggle master train/test sets & chunked CMS Provider Master    │
+ │   • Ingests Kaggle master train/test sets & 47 CMS Provider Master columns   │
  └──────────────────────────────────────┬──────────────────────────────────────┘
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
@@ -50,12 +51,12 @@ The V2 pipeline script is structured into **14 distinct, modular steps**:
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
  │ STEP 5: CMS PEER BENCHMARK CONSTRUCTION (`build_cms_peer_benchmarks`)       │
- │   • Computes state-level provider billing averages across 8.2M CMS records   │
+ │   • Computes specialty × state provider billing averages across 8.2M CMS   │
  └──────────────────────────────────────┬──────────────────────────────────────┘
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
  │ STEP 6: JOIN PEER FEATURES (`join_cms_peer_features`)                       │
- │   • Computes provider billing ratios vs. state peers (Reimbursement Ratio)  │
+ │   • Benchmarks against Internal Medicine specialty baseline per state       │
  └──────────────────────────────────────┬──────────────────────────────────────┘
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
@@ -65,7 +66,7 @@ The V2 pipeline script is structured into **14 distinct, modular steps**:
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
  │ STEP 8: IMPUTATION & ENCODING (`impute_and_encode`)                         │
- │   • Train-only LabelEncoder fitting & median imputation (Zero Data Leakage) │
+ │   • Train-only LabelEncoder (with UNKNOWN class) & median imputation        │
  └──────────────────────────────────────┬──────────────────────────────────────┘
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
@@ -79,8 +80,8 @@ The V2 pipeline script is structured into **14 distinct, modular steps**:
  └──────────────────────────────────────┬──────────────────────────────────────┘
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
- │ STEP 11: MODEL EVALUATION & PLOTTING (`evaluate_and_plot`)                  │
- │   • ROC-AUC, PR curve, confusion matrix, and feature importances by Gain    │
+ │ STEP 11: PER-TIER & MODEL EVALUATION (`evaluate_and_plot`)                  │
+ │   • Stratified 5-fold CV, per-risk-tier precision/recall breakdown, plots   │
  └──────────────────────────────────────┬──────────────────────────────────────┘
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
@@ -90,7 +91,7 @@ The V2 pipeline script is structured into **14 distinct, modular steps**:
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
  │ STEP 13: SCORE TEST SET & RISK TIERS (`score_test_and_save`)                │
- │   • Scores test providers & bins into risk tiers (Low, Medium, High, Critical)│
+ │   • Scores test providers & bins into risk tiers using config.py TIER_BINS  │
  └──────────────────────────────────────┬──────────────────────────────────────┘
                                         │
  ┌──────────────────────────────────────▼──────────────────────────────────────┐
@@ -101,66 +102,46 @@ The V2 pipeline script is structured into **14 distinct, modular steps**:
 
 ---
 
-## 3. Detailed Step-by-Step Breakdown
+## 3. Minimal JSON Payload Compatibility Test
 
-### Step 0: Imports
-Loads essential libraries: `pandas`, `numpy`, `xgboost.XGBClassifier`, `sklearn.preprocessing.LabelEncoder`, `sklearn.metrics`, `matplotlib`, and `seaborn`.
+### Input Payload
+```json
+{
+  "transaction_type": "MEDICAL_CLAIM",
+  "claim_id": "CLM-LOW-001",
+  "bene_id": "BENE-100",
+  "provider_id": "9876543210",
+  "claim_type": "carrier",
+  "claim_start_date": "2009-06-15",
+  "claim_end_date": "2009-06-15",
+  "clm_pmt_amt": 85.00,
+  "clm_tot_chrg_amt": 110.00,
+  "line_count": 2,
+  "diag_count": 1,
+  "proc_count": 1
+}
+```
 
-### Step 1: Configuration & Path Resolution
-Defines relative path resolution for execution from `F:\CTS_main\` or `backend2/`:
-- `RANDOM_STATE = 42`
-- `TEST_SIZE = 0.20` (80/20 stratified validation split)
-- `FRAUD_THRESHOLD = 0.40` (calibrated decision threshold)
+### Can Version 2 predict correctly on this minimal input?
+**YES, absolutely.** 
 
-### Step 2: Logger Setup (`setup_logger`)
-Configures dual file-and-console logging stored at `backend2/models/xgboost_fraud_v2/training_log_v2.txt`.
-
-### Step 3: Data Loading (`load_data`)
-Ingests CMS Kaggle master training set (`558,211` claims), test set (`135,392` claims), and chunked `CMS_PROVIDER_MASTER.csv` (`8,253,347` provider rows).
-
-### Step 4: Provider-Level Aggregation (`aggregate_to_provider`)
-Aggregates claim-level rows to one row per Provider ID:
-- **Ghost Billing Rate**: Proportion of claims submitted after beneficiary death (`ClaimStartDt > DOD`).
-- **Physician Stacking**: Average count of unique attending, operating, and other physicians per claim.
-- **Diagnosis/Procedure Density**: Average count of diagnosis (1-10) and procedure (1-6) codes per claim.
-
-### Step 5 & 6: CMS Peer Benchmark Construction & Join (`build_cms_peer_benchmarks` & `join_cms_peer_features`)
-Computes state-level provider billing averages across 8.2M CMS records and joins peer benchmark ratios:
-- `Reimbursement_vs_StatePeer_Ratio`: Provider average reimbursement divided by state peer average.
-
-### Step 7: Preprocessing & Chronic Recoding (`recode_chronic`)
-Recodes CMS chronic condition flags from `{1: Yes, 2: No}` to `{1: Yes, 0: No}` and computes chronic burden scores.
-
-### Step 8: Imputation & Encoding (`impute_and_encode`)
-Fits `LabelEncoder` objects and computes medians **strictly on training data** to prevent data leakage. Unseen test categories are handled safely.
-
-### Step 9: Exploratory Data Analysis (`run_eda`)
-Generates EDA charts saved in `backend2/models/xgboost_fraud_v2/eda_plots/`.
-
-### Step 10: XGBoost Model Training (`train_xgboost`)
-Trains an `XGBClassifier` with:
-- Dynamic class weight balancing: `scale_pos_weight = neg / pos`
-- Early stopping: `early_stopping_rounds = 40` evaluated on validation AUCPR (`eval_metric="aucpr"`).
-
-### Step 11: Model Evaluation & Plotting (`evaluate_and_plot`)
-Computes accuracy metrics and saves performance plots in `backend2/models/xgboost_fraud_v2/model_plots/`:
-1. `01_roc_curve.png`
-2. `02_precision_recall_curve.png`
-3. `03_confusion_matrix.png`
-4. `04_feature_importance.png`
-
-### Step 12: Save Model Artifacts (`save_artifacts`)
-Serializes model, encoders, medians, thresholds, and peer lookup tables to `xgboost_fraud_model_v2.pkl` and `cms_peer_benchmarks.csv`.
-
-### Step 13: Score Test Set & Risk Tiers (`score_test_and_save`)
-Scores provider test set and bins risk tiers (`Low`, `Medium`, `High`, `Critical`).
-
-### Step 14: Main Orchestrator (`main`)
-Orchestrates steps 1 through 13 in sequence.
+The V2 inference pipeline (`run_inference_on_df` in `backend2/main.py`) performs automatic key translation and robust feature imputation:
+1. **Field Mapping**:
+   - `provider_id` → `Provider`
+   - `claim_id` → `ClaimID`
+   - `bene_id` → `BeneID`
+   - `clm_pmt_amt` → `InscClaimAmtReimbursed` ($85.00)
+   - `clm_tot_chrg_amt - clm_pmt_amt` → `DeductibleAmtPaid` ($25.00)
+   - `claim_start_date` & `claim_end_date` → `ClaimStartDt` & `ClaimEndDt` (Duration = 1 day)
+2. **Missing Field Imputation**: Missing optional fields (`State`, `ChronicCond_*`) are safely encoded via the `"UNKNOWN"` categorical class and median feature imputation trained on the master set.
+3. **Execution Result**:
+   - **Fraud Score**: `0.059` (5.9% probability)
+   - **Risk Tier**: `Low`
+   - **Scoring Status**: `SCORED_BY_HYBRID_ML`
 
 ---
 
-## 4. Hyperparameters & Class Imbalance Strategy
+## 4. Hyperparameters & Validation Strategy
 
 | Parameter | Value | Description |
 | :--- | :--- | :--- |
@@ -170,43 +151,70 @@ Orchestrates steps 1 through 13 in sequence.
 | `scale_pos_weight` | `neg / pos` | Dynamically balances positive fraud sample weighting |
 | `eval_metric` | `aucpr` | Area under Precision-Recall Curve early stopping metric |
 | `early_stopping_rounds` | `40` | Halts training when validation AUCPR plateaus |
+| `cross_validation` | `5-Fold Stratified` | Unbiased generalization estimation |
 
 ---
 
 ## 5. Validation Results & Performance Metrics
 
-Evaluated on an independent **20% Stratified Validation Holdout Set** (`1,082` providers):
+Evaluated on Stratified 5-Fold Cross-Validation and an independent **20% Validation Holdout Set**:
 
 | Metric | Score | Interpretation |
 | :--- | :--- | :--- |
-| **ROC-AUC** | **0.9468** | Exceptional discrimination between legitimate and fraudulent providers |
-| **Avg Precision (AUCPR)** | **0.6823** | Strong precision across recall thresholds |
-| **Decision Threshold** | **0.40** | Calibrated decision boundary |
+| **Cross-Validation Mean ROC-AUC** | **0.9351 ± 0.0079** | Honest 5-fold cross-validation score across all folds |
+| **Holdout ROC-AUC** | **0.9570** | Exceptional discrimination on held-out test split |
+| **Holdout Avg Precision (AUCPR)** | **0.6724** | Strong precision across recall thresholds |
+| **Decision Threshold** | **0.40** | Calibrated decision boundary (`config.py`) |
 
 ---
 
-## 6. Complete Pure Behavioral Feature Set Reference (46 Features)
+## 6. Complete Pure Behavioral & CMS Peer Feature Set Reference (59 Features)
 
-### Financial & Reimbursement (11 Features)
-- `InscClaimAmtReimbursed`, `DeductibleAmtPaid`, `IPAnnualReimbursementAmt`, `IPAnnualDeductibleAmt`, `OPAnnualReimbursementAmt`, `OPAnnualDeductibleAmt`, `ReimbursementPerDay`, `DeductibleRatio`, `IPvsOPReimbursementRatio`, `TotalAnnualReimbursement`, `TotalAnnualDeductible`
+### 1. Provider Volume & Claims Features (3 Features)
+- `total_claims`, `unique_beneficiaries`, `claims_per_beneficiary`
 
-### Temporal & Billing Duration (4 Features)
-- `ClaimDurationDays`, `AdmissionToDischarge`, `AgeAtClaim`, `ClaimAfterDeath` (Ghost beneficiary flag)
+### 2. Provider Financial & Billing Features (10 Features)
+- `total_reimbursement`, `avg_claim_reimbursed`, `max_claim_reimbursed`, `std_claim_reimbursed`, `reimbursement_per_claim`, `avg_deductible_paid`, `avg_ip_annual_reimb`, `avg_op_annual_reimb`, `avg_total_annual_reimb`, `ip_vs_op_ratio`
 
-### Beneficiary Demographics (4 Features)
-- `Gender`, `Race`, `RenalDiseaseIndicator`, `IsDead`
+### 3. Temporal & Billing Duration Features (2 Features)
+- `avg_claim_duration`, `avg_los`
 
-### Coverage & Insurance (4 Features)
-- `NoOfMonths_PartACov`, `NoOfMonths_PartBCov`, `PartACoverageGap`, `PartBCoverageGap`
+### 4. Beneficiary Demographics & Risk Features (4 Features)
+- `avg_bene_age`, `avg_chronic_burden`, `renal_disease_rate`, `any_deceased_bene`
 
-### Physician Interactions (4 Features)
-- `HasAttendingPhysician`, `HasOperatingPhysician`, `HasOtherPhysician`, `PhysicianCount`
+### 5. High-Risk Fraud Signals (6 Features)
+- `ghost_billing_rate`, `ghost_billing_claim_count`, `physician_stacking_avg`, `max_physicians_on_claim`, `multi_physician_claim_pct`, `unusual_billing_combo_cnt`
 
-### Clinical Diagnosis & Procedure (3 Features)
-- `DiagnosisCodeCount`, `ProcedureCodeCount`, `HasAdmitDiagnosis`
+### 6. Clinical Complexity Density Features (2 Features)
+- `avg_diagnosis_density`, `avg_procedure_density`
 
-### Chronic Condition Burden (11 Features)
-- `Chronic_Alzheimer`, `Chronic_HeartFailure`, `Chronic_KidneyDisease`, `Chronic_Cancer`, `Chronic_COPD`, `Chronic_Depression`, `Chronic_Diabetes`, `Chronic_IschemicHeart`, `Chronic_Osteoprorosis`, `Chronic_RheumatoidArthritis`, `Chronic_Stroke`
+### 7. Provider Chronic Condition Rates (11 Features)
+- `cc_alzheimer_rate`, `cc_heartfailure_rate`, `cc_kidneydisease_rate`, `cc_cancer_rate`, `cc_obstrpulmonary_rate`, `cc_depression_rate`, `cc_diabetes_rate`, `cc_ischemicheart_rate`, `cc_osteoprorosis_rate`, `cc_rheumatoidarthritis_rate`, `cc_stroke_rate`
 
-### CMS State Peer Benchmarks (5 Features)
-- `Reimbursement_vs_StatePeer_Ratio`, `State_Peer_Avg_Services`, `State_Peer_Avg_Reimbursement`, `State_Peer_Avg_RiskScore`, `State_Peer_Diabetes_Pct`
+### 8. Provider Categorical Identity (1 Feature)
+- `primary_state` (Encoded with `"UNKNOWN"` class handling)
+
+### 9. CMS Specialty × State Peer Benchmarks & Billing Anomaly Ratios (20 Features)
+- `charge_vs_peer_ratio` (Provider reimbursement / Peer submitted charge)
+- `benes_vs_peer_ratio` (Beneficiary volume ratio)
+- `avg_age_vs_peer` (Age distribution ratio)
+- `chronic_burden_vs_peer_risk_proxy` (Chronic burden / Peer median risk score)
+- `peer_median_drug_to_medical_ratio` (Drug vs. medical billing split)
+- `peer_median_stdz_to_allowed_ratio` (Geographic standardized payment spread)
+- `peer_median_pymt_to_charge_ratio` (Payment efficiency ratio)
+- `peer_median_Tot_Sbmtd_Chrg` (State specialty submitted charge baseline)
+- `peer_median_Tot_Mdcr_Pymt_Amt` (State specialty Medicare payment baseline)
+- `peer_median_Tot_Benes` (State specialty beneficiary count baseline)
+- `peer_median_Bene_Avg_Risk_Scre` (CMS beneficiary HCC risk score baseline)
+- `peer_median_Rndrng_Prvdr_RUCA` (Rural-Urban Commuting Area index baseline)
+- `peer_median_Drug_Sprsn_Ind` (Prescription data suppression rate)
+- `peer_median_Bene_CC_BH_Alcohol_Drug_V1_Pct` (Substance abuse prevalence)
+- `peer_median_Bene_CC_BH_Depress_V1_Pct` (Depression prevalence)
+- `peer_median_Bene_CC_BH_PTSD_V1_Pct` (PTSD prevalence)
+- `peer_median_Bene_CC_BH_Alz_NonAlzdem_V2_Pct` (Dementia prevalence)
+- `peer_median_Bene_CC_PH_Diabetes_V2_Pct` (Diabetes prevalence)
+- `peer_median_Bene_CC_PH_HF_NonIHD_V2_Pct` (Heart failure prevalence)
+- `peer_median_Bene_CC_PH_CKD_V2_Pct` (Chronic kidney disease prevalence)
+- `peer_median_Bene_CC_PH_IschemicHeart_V2_Pct` (Ischemic heart disease prevalence)
+- `peer_median_Bene_CC_PH_Stroke_TIA_V2_Pct` (Stroke / TIA prevalence)
+- `peer_median_Bene_CC_PH_Hypertension_V2_Pct` (Hypertension prevalence)
