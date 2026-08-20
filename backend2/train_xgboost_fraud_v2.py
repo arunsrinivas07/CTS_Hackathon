@@ -75,28 +75,59 @@ RANDOM_STATE    = 42
 TEST_SIZE       = 0.20
 FRAUD_THRESHOLD = 0.40
 
-# CMS columns to read (avoid loading all 82 to keep memory reasonable)
+# CMS columns to read — all high-value fraud signals across 82 available columns
 CMS_USECOLS = [
+    # Provider identity
     "Rndrng_Prvdr_State_Abrvtn",
     "Rndrng_Prvdr_Type",
+    "Rndrng_Prvdr_RUCA",           # Rural-Urban Commuting Area code (1-10)
+    # Billing volumes
     "Tot_HCPCS_Cds",
     "Tot_Benes",
     "Tot_Srvcs",
     "Tot_Sbmtd_Chrg",
     "Tot_Mdcr_Alowd_Amt",
     "Tot_Mdcr_Pymt_Amt",
-    "Tot_Mdcr_Stdzd_Amt",
+    "Tot_Mdcr_Stdzd_Amt",          # Geographic-standardised payment (cleaner baseline)
+    # Drug service breakdown
+    "Drug_Sprsn_Ind",              # Suppression flag (< 10 patients) — small-volume fraud signal
+    "Drug_Tot_Benes",
+    "Drug_Tot_Srvcs",
+    "Drug_Sbmtd_Chrg",
+    "Drug_Mdcr_Pymt_Amt",
+    # Medical service breakdown
+    "Med_Sprsn_Ind",
+    "Med_Tot_HCPCS_Cds",           # Distinct medical codes = upcoding risk
+    "Med_Tot_Benes",
+    "Med_Sbmtd_Chrg",
+    "Med_Mdcr_Pymt_Amt",
+    # Beneficiary risk
     "Bene_Avg_Age",
     "Bene_Avg_Risk_Scre",
-    "Bene_Dual_Cnt",
+    "Bene_Dual_Cnt",               # Dual Medicare+Medicaid count
+    "Bene_Age_LT_65_Cnt",          # Under-65 beneficiary count
+    "Bene_Age_GT_84_Cnt",          # Very elderly count
+    # Behavioural health conditions (all 11 — new!)
+    "Bene_CC_BH_Alcohol_Drug_V1_Pct",
+    "Bene_CC_BH_Anxiety_V1_Pct",
+    "Bene_CC_BH_Bipolar_V1_Pct",
+    "Bene_CC_BH_Depress_V1_Pct",
+    "Bene_CC_BH_PTSD_V1_Pct",
+    "Bene_CC_BH_Schizo_OthPsy_V1_Pct",
+    "Bene_CC_BH_Alz_NonAlzdem_V2_Pct",
+    # Physical health conditions
     "Bene_CC_PH_Diabetes_V2_Pct",
     "Bene_CC_PH_HF_NonIHD_V2_Pct",
     "Bene_CC_PH_CKD_V2_Pct",
     "Bene_CC_PH_Afib_V2_Pct",
-    "Bene_CC_BH_Depress_V1_Pct",
     "Bene_CC_PH_Cancer6_V2_Pct",
     "Bene_CC_PH_COPD_V2_Pct",
     "Bene_CC_PH_IschemicHeart_V2_Pct",
+    "Bene_CC_PH_Hyperlipidemia_V2_Pct",
+    "Bene_CC_PH_Hypertension_V2_Pct",
+    "Bene_CC_PH_Stroke_TIA_V2_Pct",
+    "Bene_CC_PH_Osteoporosis_V2_Pct",
+    "Bene_CC_PH_Arthritis_V2_Pct",
 ]
 
 
@@ -400,14 +431,64 @@ def build_cms_peer_benchmarks(cms_df: pd.DataFrame, logger) -> pd.DataFrame:
     cms["Rndrng_Prvdr_State_Abrvtn"] = cms["Rndrng_Prvdr_State_Abrvtn"].astype(str).str.strip().str.upper()
     cms["Rndrng_Prvdr_Type"]         = cms["Rndrng_Prvdr_Type"].astype(str).str.strip().str.lower()
 
+    # Derive computed billing ratios BEFORE aggregation — valid at provider level
+    for c in ["Drug_Mdcr_Pymt_Amt", "Med_Mdcr_Pymt_Amt", "Tot_Sbmtd_Chrg",
+              "Tot_Mdcr_Pymt_Amt", "Tot_Mdcr_Stdzd_Amt", "Tot_Mdcr_Alowd_Amt",
+              "Drug_Tot_Benes", "Med_Tot_Benes", "Tot_Benes",
+              "Drug_Sbmtd_Chrg", "Med_Sbmtd_Chrg", "Rndrng_Prvdr_RUCA"]:
+        if c in cms.columns:
+            cms[c] = pd.to_numeric(cms[c], errors="coerce")
+
+    # Drug-to-Medical billing ratio (unusual splits flag fraud specialisation)
+    if "Drug_Mdcr_Pymt_Amt" in cms.columns and "Med_Mdcr_Pymt_Amt" in cms.columns:
+        cms["drug_to_medical_ratio"] = (
+            cms["Drug_Mdcr_Pymt_Amt"] /
+            (cms["Med_Mdcr_Pymt_Amt"] + cms["Drug_Mdcr_Pymt_Amt"]).replace(0, np.nan)
+        )
+
+    # Standardised-to-allowed payment spread (geographic billing anomaly)
+    if "Tot_Mdcr_Stdzd_Amt" in cms.columns and "Tot_Mdcr_Alowd_Amt" in cms.columns:
+        cms["stdz_to_allowed_ratio"] = (
+            cms["Tot_Mdcr_Stdzd_Amt"] /
+            cms["Tot_Mdcr_Alowd_Amt"].replace(0, np.nan)
+        )
+
+    # Payment-to-charge ratio (low = overcharging, high = unusual)
+    if "Tot_Mdcr_Pymt_Amt" in cms.columns and "Tot_Sbmtd_Chrg" in cms.columns:
+        cms["pymt_to_charge_ratio"] = (
+            cms["Tot_Mdcr_Pymt_Amt"] /
+            cms["Tot_Sbmtd_Chrg"].replace(0, np.nan)
+        )
+
+    # Suppression flag: Y/N → binary (small-volume = potential fraud setup)
+    for flag_col in ["Drug_Sprsn_Ind", "Med_Sprsn_Ind"]:
+        if flag_col in cms.columns:
+            cms[flag_col] = (cms[flag_col].astype(str).str.strip().str.upper() == "Y").astype(int)
+
     numeric_cols = [
         "Tot_Sbmtd_Chrg", "Tot_Mdcr_Alowd_Amt", "Tot_Mdcr_Pymt_Amt",
         "Tot_Mdcr_Stdzd_Amt", "Tot_Benes", "Tot_Srvcs",
         "Bene_Avg_Risk_Scre", "Bene_Avg_Age",
+        "Bene_Dual_Cnt", "Bene_Age_LT_65_Cnt", "Bene_Age_GT_84_Cnt",
+        "Rndrng_Prvdr_RUCA",
+        # Drug breakdown
+        "Drug_Tot_Benes", "Drug_Sbmtd_Chrg", "Drug_Mdcr_Pymt_Amt",
+        "drug_to_medical_ratio", "stdz_to_allowed_ratio", "pymt_to_charge_ratio",
+        # Suppression
+        "Drug_Sprsn_Ind", "Med_Sprsn_Ind",
+        # BH conditions
+        "Bene_CC_BH_Alcohol_Drug_V1_Pct", "Bene_CC_BH_Anxiety_V1_Pct",
+        "Bene_CC_BH_Bipolar_V1_Pct", "Bene_CC_BH_Depress_V1_Pct",
+        "Bene_CC_BH_PTSD_V1_Pct", "Bene_CC_BH_Schizo_OthPsy_V1_Pct",
+        "Bene_CC_BH_Alz_NonAlzdem_V2_Pct",
+        # PH conditions
         "Bene_CC_PH_Diabetes_V2_Pct", "Bene_CC_PH_HF_NonIHD_V2_Pct",
         "Bene_CC_PH_CKD_V2_Pct", "Bene_CC_PH_Afib_V2_Pct",
         "Bene_CC_BH_Depress_V1_Pct", "Bene_CC_PH_Cancer6_V2_Pct",
         "Bene_CC_PH_COPD_V2_Pct", "Bene_CC_PH_IschemicHeart_V2_Pct",
+        "Bene_CC_PH_Hyperlipidemia_V2_Pct", "Bene_CC_PH_Hypertension_V2_Pct",
+        "Bene_CC_PH_Stroke_TIA_V2_Pct", "Bene_CC_PH_Osteoporosis_V2_Pct",
+        "Bene_CC_PH_Arthritis_V2_Pct",
     ]
     for c in numeric_cols:
         if c in cms.columns:
@@ -552,19 +633,37 @@ CC_RATE_COLS = [
     for cc in CHRONIC_COLS
 ]
 
-# CMS peer benchmark features
+# CMS peer benchmark features — expanded to include drug/billing ratios, RUCA, all BH/PH conditions
 PEER_FEATURE_COLS = [
+    # Provider-vs-peer ratio features (computed in join_cms_peer_features)
     "charge_vs_peer_ratio",
     "benes_vs_peer_ratio",
     "avg_age_vs_peer",
-    "chronic_burden_vs_peer_risk_proxy",   # ordinal proxy, NOT calibrated ratio
+    "chronic_burden_vs_peer_risk_proxy",      # ordinal proxy, NOT calibrated ratio
+    # Billing anomaly ratios (from peer baseline)
+    "peer_median_drug_to_medical_ratio",      # drug vs medical billing split
+    "peer_median_stdz_to_allowed_ratio",      # geographic billing spread
+    "peer_median_pymt_to_charge_ratio",       # payment efficiency
+    # Volume baselines
     "peer_median_Tot_Sbmtd_Chrg",
     "peer_median_Tot_Mdcr_Pymt_Amt",
     "peer_median_Tot_Benes",
+    # Risk baselines
     "peer_median_Bene_Avg_Risk_Scre",
+    "peer_median_Rndrng_Prvdr_RUCA",          # rural vs urban peer baseline
+    "peer_median_Drug_Sprsn_Ind",             # suppression rate
+    # BH chronic conditions
+    "peer_median_Bene_CC_BH_Alcohol_Drug_V1_Pct",
+    "peer_median_Bene_CC_BH_Depress_V1_Pct",
+    "peer_median_Bene_CC_BH_PTSD_V1_Pct",
+    "peer_median_Bene_CC_BH_Alz_NonAlzdem_V2_Pct",
+    # PH chronic conditions
     "peer_median_Bene_CC_PH_Diabetes_V2_Pct",
     "peer_median_Bene_CC_PH_HF_NonIHD_V2_Pct",
     "peer_median_Bene_CC_PH_CKD_V2_Pct",
+    "peer_median_Bene_CC_PH_IschemicHeart_V2_Pct",
+    "peer_median_Bene_CC_PH_Stroke_TIA_V2_Pct",
+    "peer_median_Bene_CC_PH_Hypertension_V2_Pct",
 ]
 
 CAT_COLS = ["primary_state"]

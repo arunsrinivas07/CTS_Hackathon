@@ -1,153 +1,153 @@
-2026-08-20 20:59:25  
+2026-08-20 21:09:16  
 ======================================================================
-2026-08-20 20:59:25    Medicare Provider-Level Fraud Detection — XGBoost v2
-2026-08-20 20:59:25    Started: 2026-08-20 20:59:25
-2026-08-20 20:59:25  ======================================================================
-2026-08-20 20:59:25  
+2026-08-20 21:09:16    Medicare Provider-Level Fraud Detection — XGBoost v2
+2026-08-20 21:09:16    Started: 2026-08-20 21:09:16
+2026-08-20 21:09:16  ======================================================================
+2026-08-20 21:09:16  
 ======================================================================
-2026-08-20 20:59:25    STEP 1 — DATA LOADING
-2026-08-20 20:59:25  ======================================================================
-2026-08-20 20:59:25  
+2026-08-20 21:09:16    STEP 1 — DATA LOADING
+2026-08-20 21:09:16  ======================================================================
+2026-08-20 21:09:16  
   Loading train  →  KAGGLE_MASTER_TRAIN.csv
-2026-08-20 20:59:27      Rows :    558,211  |  Cols : 56
-2026-08-20 20:59:27  
+2026-08-20 21:09:18      Rows :    558,211  |  Cols : 56
+2026-08-20 21:09:18  
   Loading test  →  KAGGLE_MASTER_TEST.csv
-2026-08-20 20:59:28      Rows :    135,392  |  Cols : 55
-2026-08-20 20:59:28  
+2026-08-20 21:09:19      Rows :    135,392  |  Cols : 55
+2026-08-20 21:09:19  
   Loading cms  →  CMS_PROVIDER_MASTER.csv  (chunked, selected cols)
-2026-08-20 21:00:01      Rows :  8,253,347  |  Cols : 20
-2026-08-20 21:00:01  
+2026-08-20 21:10:04      Rows :  8,253,347  |  Cols : 44
+2026-08-20 21:10:04  
 ======================================================================
-2026-08-20 21:00:01    STEP 3 — PROVIDER-LEVEL AGGREGATION
-2026-08-20 21:00:01  ======================================================================
-2026-08-20 21:00:05  
+2026-08-20 21:10:04    STEP 3 — PROVIDER-LEVEL AGGREGATION
+2026-08-20 21:10:04  ======================================================================
+2026-08-20 21:10:07  
   Providers      : 5,410
-2026-08-20 21:00:05    Fraud rate     : 0.094  (506 flagged)
-2026-08-20 21:00:05    Final provider feature matrix: (5410, 41)
-2026-08-20 21:00:05  
+2026-08-20 21:10:07    Fraud rate     : 0.094  (506 flagged)
+2026-08-20 21:10:07    Final provider feature matrix: (5410, 41)
+2026-08-20 21:10:08  
 ======================================================================
-2026-08-20 21:00:05    STEP 3 — PROVIDER-LEVEL AGGREGATION
-2026-08-20 21:00:05  ======================================================================
-2026-08-20 21:00:06    Final provider feature matrix: (1353, 41)
-2026-08-20 21:00:06  
+2026-08-20 21:10:08    STEP 3 — PROVIDER-LEVEL AGGREGATION
+2026-08-20 21:10:08  ======================================================================
+2026-08-20 21:10:08    Final provider feature matrix: (1353, 41)
+2026-08-20 21:10:08  
 ======================================================================
-2026-08-20 21:00:06    STEP 4 — CMS PEER BENCHMARK CONSTRUCTION
-2026-08-20 21:00:06  ======================================================================
-2026-08-20 21:00:11    Building peer group aggregations (may take 30-60s for 8M rows)...
-2026-08-20 21:01:05    Peer benchmark table: (5253, 50)
-2026-08-20 21:01:05  
+2026-08-20 21:10:08    STEP 4 — CMS PEER BENCHMARK CONSTRUCTION
+2026-08-20 21:10:08  ======================================================================
+2026-08-20 21:10:30    Building peer group aggregations (may take 30-60s for 8M rows)...
+2026-08-20 21:12:26    Peer benchmark table: (5253, 119)
+2026-08-20 21:12:27  
   Joining CMS peer benchmarks onto provider table ...
-2026-08-20 21:01:05      Using peer specialty: 'internal medicine' (61 rows)
-2026-08-20 21:01:05    Provider table after CMS join: (5410, 93)
-2026-08-20 21:01:05  
+2026-08-20 21:12:27      Using peer specialty: 'internal medicine' (61 rows)
+2026-08-20 21:12:27    Provider table after CMS join: (5410, 162)
+2026-08-20 21:12:27  
   Joining CMS peer benchmarks onto provider table ...
-2026-08-20 21:01:05      Using peer specialty: 'internal medicine' (61 rows)
-2026-08-20 21:01:05    Provider table after CMS join: (1353, 93)
-2026-08-20 21:01:05  
+2026-08-20 21:12:27      Using peer specialty: 'internal medicine' (61 rows)
+2026-08-20 21:12:27    Provider table after CMS join: (1353, 162)
+2026-08-20 21:12:27  
 ======================================================================
-2026-08-20 21:01:05    STEP 5 — EXPLORATORY DATA ANALYSIS (Provider Level)
-2026-08-20 21:01:05  ======================================================================
-2026-08-20 21:01:06      Saved: 01_provider_class_distribution.png
-2026-08-20 21:01:06      Saved: 02_ghost_billing_rate.png
-2026-08-20 21:01:06      Saved: 03_total_reimbursement.png
-2026-08-20 21:01:06      Saved: 04_physician_stacking.png
-2026-08-20 21:01:06      Saved: 05_chronic_burden.png
-2026-08-20 21:01:06      Skipped: 06_charge_vs_peer_ratio.png (no CMS state match — all NaN)
-2026-08-20 21:01:07      Saved: 07_ip_vs_op_ratio.png
-2026-08-20 21:01:07      Saved: 08_feature_correlation.png
-2026-08-20 21:01:07  
+2026-08-20 21:12:27    STEP 5 — EXPLORATORY DATA ANALYSIS (Provider Level)
+2026-08-20 21:12:27  ======================================================================
+2026-08-20 21:12:28      Saved: 01_provider_class_distribution.png
+2026-08-20 21:12:28      Saved: 02_ghost_billing_rate.png
+2026-08-20 21:12:28      Saved: 03_total_reimbursement.png
+2026-08-20 21:12:28      Saved: 04_physician_stacking.png
+2026-08-20 21:12:29      Saved: 05_chronic_burden.png
+2026-08-20 21:12:29      Skipped: 06_charge_vs_peer_ratio.png (no CMS state match — all NaN)
+2026-08-20 21:12:29      Saved: 07_ip_vs_op_ratio.png
+2026-08-20 21:12:29      Saved: 08_feature_correlation.png
+2026-08-20 21:12:29  
   EDA complete — plots saved to: F:\CTS_main\version2_xg\backend2\models\xgboost_fraud_v2\eda_plots
-2026-08-20 21:01:07  
-  Active features: 47
-2026-08-20 21:01:07    Feature list: ['total_claims', 'unique_beneficiaries', 'claims_per_beneficiary', 'total_reimbursement', 'avg_claim_reimbursed', 'max_claim_reimbursed', 'std_claim_reimbursed', 'reimbursement_per_claim', 'avg_deductible_paid', 'avg_ip_annual_reimb', 'avg_op_annual_reimb', 'avg_total_annual_reimb', 'ip_vs_op_ratio', 'avg_claim_duration', 'avg_los', 'avg_bene_age', 'avg_chronic_burden', 'renal_disease_rate', 'any_deceased_bene', 'ghost_billing_rate', 'physician_stacking_rate', 'avg_physician_count', 'ip_claim_ratio', 'avg_diagnosis_density', 'avg_procedure_density', 'cc_alzheimer_rate', 'cc_heartfailure_rate', 'cc_kidneydisease_rate', 'cc_cancer_rate', 'cc_obstrpulmonary_rate', 'cc_depression_rate', 'cc_diabetes_rate', 'cc_ischemicheart_rate', 'cc_osteoporasis_rate', 'cc_rheumatoidarthritis_rate', 'cc_stroke_rate', 'charge_vs_peer_ratio', 'benes_vs_peer_ratio', 'avg_age_vs_peer', 'chronic_burden_vs_peer_risk_proxy', 'peer_median_Tot_Sbmtd_Chrg', 'peer_median_Tot_Mdcr_Pymt_Amt', 'peer_median_Tot_Benes', 'peer_median_Bene_Avg_Risk_Scre', 'peer_median_Bene_CC_PH_Diabetes_V2_Pct', 'peer_median_Bene_CC_PH_HF_NonIHD_V2_Pct', 'peer_median_Bene_CC_PH_CKD_V2_Pct']
-2026-08-20 21:01:07  
+2026-08-20 21:12:29  
+  Active features: 59
+2026-08-20 21:12:29    Feature list: ['total_claims', 'unique_beneficiaries', 'claims_per_beneficiary', 'total_reimbursement', 'avg_claim_reimbursed', 'max_claim_reimbursed', 'std_claim_reimbursed', 'reimbursement_per_claim', 'avg_deductible_paid', 'avg_ip_annual_reimb', 'avg_op_annual_reimb', 'avg_total_annual_reimb', 'ip_vs_op_ratio', 'avg_claim_duration', 'avg_los', 'avg_bene_age', 'avg_chronic_burden', 'renal_disease_rate', 'any_deceased_bene', 'ghost_billing_rate', 'physician_stacking_rate', 'avg_physician_count', 'ip_claim_ratio', 'avg_diagnosis_density', 'avg_procedure_density', 'cc_alzheimer_rate', 'cc_heartfailure_rate', 'cc_kidneydisease_rate', 'cc_cancer_rate', 'cc_obstrpulmonary_rate', 'cc_depression_rate', 'cc_diabetes_rate', 'cc_ischemicheart_rate', 'cc_osteoporasis_rate', 'cc_rheumatoidarthritis_rate', 'cc_stroke_rate', 'charge_vs_peer_ratio', 'benes_vs_peer_ratio', 'avg_age_vs_peer', 'chronic_burden_vs_peer_risk_proxy', 'peer_median_drug_to_medical_ratio', 'peer_median_stdz_to_allowed_ratio', 'peer_median_pymt_to_charge_ratio', 'peer_median_Tot_Sbmtd_Chrg', 'peer_median_Tot_Mdcr_Pymt_Amt', 'peer_median_Tot_Benes', 'peer_median_Bene_Avg_Risk_Scre', 'peer_median_Rndrng_Prvdr_RUCA', 'peer_median_Drug_Sprsn_Ind', 'peer_median_Bene_CC_BH_Alcohol_Drug_V1_Pct', 'peer_median_Bene_CC_BH_Depress_V1_Pct', 'peer_median_Bene_CC_BH_PTSD_V1_Pct', 'peer_median_Bene_CC_BH_Alz_NonAlzdem_V2_Pct', 'peer_median_Bene_CC_PH_Diabetes_V2_Pct', 'peer_median_Bene_CC_PH_HF_NonIHD_V2_Pct', 'peer_median_Bene_CC_PH_CKD_V2_Pct', 'peer_median_Bene_CC_PH_IschemicHeart_V2_Pct', 'peer_median_Bene_CC_PH_Stroke_TIA_V2_Pct', 'peer_median_Bene_CC_PH_Hypertension_V2_Pct']
+2026-08-20 21:12:29  
   Imputing missing values and encoding categoricals ...
-2026-08-20 21:01:07      Imputed 47 numeric  +  0 categorical features
-2026-08-20 21:01:07  
+2026-08-20 21:12:29      Imputed 59 numeric  +  0 categorical features
+2026-08-20 21:12:29  
   Train set : 4,328 providers
-2026-08-20 21:01:07    Val set   : 1,082 providers
-2026-08-20 21:01:07  
+2026-08-20 21:12:29    Val set   : 1,082 providers
+2026-08-20 21:12:29  
 ======================================================================
-2026-08-20 21:01:07    STEP 5B — STRATIFIED 5-FOLD CROSS-VALIDATION
-2026-08-20 21:01:07  ======================================================================
-2026-08-20 21:01:08    Fold 1/5 — ROC-AUC: 0.9312  |  PR-AUC (AP): 0.6439
-2026-08-20 21:01:08    Fold 2/5 — ROC-AUC: 0.9211  |  PR-AUC (AP): 0.6740
-2026-08-20 21:01:09    Fold 3/5 — ROC-AUC: 0.9383  |  PR-AUC (AP): 0.7320
-2026-08-20 21:01:09    Fold 4/5 — ROC-AUC: 0.9476  |  PR-AUC (AP): 0.6816
-2026-08-20 21:01:10    Fold 5/5 — ROC-AUC: 0.9404  |  PR-AUC (AP): 0.6803
-2026-08-20 21:01:10  
+2026-08-20 21:12:29    STEP 5B — STRATIFIED 5-FOLD CROSS-VALIDATION
+2026-08-20 21:12:29  ======================================================================
+2026-08-20 21:12:30    Fold 1/5 — ROC-AUC: 0.9299  |  PR-AUC (AP): 0.6567
+2026-08-20 21:12:30    Fold 2/5 — ROC-AUC: 0.9232  |  PR-AUC (AP): 0.6620
+2026-08-20 21:12:31    Fold 3/5 — ROC-AUC: 0.9366  |  PR-AUC (AP): 0.7338
+2026-08-20 21:12:31    Fold 4/5 — ROC-AUC: 0.9460  |  PR-AUC (AP): 0.6816
+2026-08-20 21:12:32    Fold 5/5 — ROC-AUC: 0.9401  |  PR-AUC (AP): 0.6724
+2026-08-20 21:12:32  
   Cross-Validation Results (5-Fold Stratified):
-2026-08-20 21:01:10      Mean ROC-AUC : 0.9357 ± 0.0090
-2026-08-20 21:01:10      Mean PR-AUC  : 0.6824 ± 0.0284
-2026-08-20 21:01:10  
+2026-08-20 21:12:32      Mean ROC-AUC : 0.9351 ± 0.0079
+2026-08-20 21:12:32      Mean PR-AUC  : 0.6813 ± 0.0276
+2026-08-20 21:12:32  
 ======================================================================
-2026-08-20 21:01:10    STEP 6 — XGBOOST TRAINING
-2026-08-20 21:01:10  ======================================================================
-2026-08-20 21:01:10  
+2026-08-20 21:12:32    STEP 6 — XGBOOST TRAINING
+2026-08-20 21:12:32  ======================================================================
+2026-08-20 21:12:32  
   Class balance  →  Neg: 3,923  |  Pos: 405
-2026-08-20 21:01:10    scale_pos_weight = 9.6864
-2026-08-20 21:01:10  
+2026-08-20 21:12:32    scale_pos_weight = 9.6864
+2026-08-20 21:12:32  
   Training XGBoost v2 (Provider Level)  ...
-2026-08-20 21:01:10  
-  Best iteration  : 15
-2026-08-20 21:01:10    Best AUCPR score: 0.718688
-2026-08-20 21:01:10  
+2026-08-20 21:12:32  
+  Best iteration  : 118
+2026-08-20 21:12:32    Best AUCPR score: 0.738773
+2026-08-20 21:12:32  
 ======================================================================
-2026-08-20 21:01:10    STEP 7 — MODEL EVALUATION
-2026-08-20 21:01:10  ======================================================================
-2026-08-20 21:01:10  
+2026-08-20 21:12:32    STEP 7 — MODEL EVALUATION
+2026-08-20 21:12:32  ======================================================================
+2026-08-20 21:12:32  
   Threshold used  : 0.4
-2026-08-20 21:01:10    ROC-AUC         : 0.9547
-2026-08-20 21:01:10    Avg Precision   : 0.7155
-2026-08-20 21:01:10    F1 Score        : 0.3846
-2026-08-20 21:01:10    MCC             : 0.3971
-2026-08-20 21:01:10  
+2026-08-20 21:12:32    ROC-AUC         : 0.9570
+2026-08-20 21:12:32    Avg Precision   : 0.7402
+2026-08-20 21:12:32    F1 Score        : 0.5662
+2026-08-20 21:12:32    MCC             : 0.5574
+2026-08-20 21:12:32  
   Classification Report:
 
-2026-08-20 21:01:10                precision    recall  f1-score   support
+2026-08-20 21:12:32                precision    recall  f1-score   support
 
-   Not Fraud       1.00      0.67      0.81       981
-       Fraud       0.24      0.99      0.38       101
+   Not Fraud       0.99      0.87      0.92       981
+       Fraud       0.41      0.91      0.57       101
 
-    accuracy                           0.70      1082
-   macro avg       0.62      0.83      0.59      1082
-weighted avg       0.93      0.70      0.77      1082
+    accuracy                           0.87      1082
+   macro avg       0.70      0.89      0.74      1082
+weighted avg       0.94      0.87      0.89      1082
 
-2026-08-20 21:01:10      Saved: 01_roc_curve.png
-2026-08-20 21:01:10      Saved: 02_precision_recall_curve.png
-2026-08-20 21:01:10      Saved: 03_confusion_matrix.png
-2026-08-20 21:01:10      Saved: 04_feature_importance.png
-2026-08-20 21:01:10  
+2026-08-20 21:12:32      Saved: 01_roc_curve.png
+2026-08-20 21:12:32      Saved: 02_precision_recall_curve.png
+2026-08-20 21:12:32      Saved: 03_confusion_matrix.png
+2026-08-20 21:12:33      Saved: 04_feature_importance.png
+2026-08-20 21:12:33  
   Model plots saved to: F:\CTS_main\version2_xg\backend2\models\xgboost_fraud_v2\model_plots
-2026-08-20 21:01:10  
+2026-08-20 21:12:33  
   Risk-Tier Validation Breakdown (Holdout Set):
-2026-08-20 21:01:10    Tier              N   Fraud%  Precision    Recall   Coverage
-2026-08-20 21:01:10    --------------------------------------------------------------
-2026-08-20 21:01:10    Low             827     1.0%     0.0097    0.0792      76.4%
-2026-08-20 21:01:10    Medium           41    12.2%     0.1220    0.0495       3.8%
-2026-08-20 21:01:10    High             46    10.9%     0.1087    0.0495       4.3%
-2026-08-20 21:01:10    Critical        168    49.4%     0.4940    0.8218      15.5%
-2026-08-20 21:01:10    --------------------------------------------------------------
-2026-08-20 21:01:10    Precision = fraction of flagged providers who are truly fraudulent.
-2026-08-20 21:01:10    Recall    = fraction of all fraudulent providers captured in tier.
-2026-08-20 21:01:10  
+2026-08-20 21:12:33    Tier              N   Fraud%  Precision    Recall   Coverage
+2026-08-20 21:12:33    --------------------------------------------------------------
+2026-08-20 21:12:33    Low             887     1.5%     0.0147    0.1287      82.0%
+2026-08-20 21:12:33    Medium            6    33.3%     0.3333    0.0198       0.6%
+2026-08-20 21:12:33    High              7    14.3%     0.1429    0.0099       0.6%
+2026-08-20 21:12:33    Critical        182    46.7%     0.4670    0.8416      16.8%
+2026-08-20 21:12:33    --------------------------------------------------------------
+2026-08-20 21:12:33    Precision = fraction of flagged providers who are truly fraudulent.
+2026-08-20 21:12:33    Recall    = fraction of all fraudulent providers captured in tier.
+2026-08-20 21:12:33  
   Model artifacts saved → F:\CTS_main\version2_xg\backend2\models\xgboost_fraud_v2\xgboost_fraud_model_v2.pkl
-2026-08-20 21:01:10  
+2026-08-20 21:12:33  
 ======================================================================
-2026-08-20 21:01:10    STEP 8 — SCORING PROVIDER TEST SET
-2026-08-20 21:01:10  ======================================================================
-2026-08-20 21:01:10  
+2026-08-20 21:12:33    STEP 8 — SCORING PROVIDER TEST SET
+2026-08-20 21:12:33  ======================================================================
+2026-08-20 21:12:33  
   Risk Tier Distribution (test providers):
-2026-08-20 21:01:10      Low       :      0  (0.0%)
-2026-08-20 21:01:10      Medium    :  1,103  (81.5%)
-2026-08-20 21:01:10      High      :    250  (18.5%)
-2026-08-20 21:01:10      Critical  :      0  (0.0%)
-2026-08-20 21:01:10  
+2026-08-20 21:12:33      Low       :  1,015  (75.0%)
+2026-08-20 21:12:33      Medium    :    102  (7.5%)
+2026-08-20 21:12:33      High      :     80  (5.9%)
+2026-08-20 21:12:33      Critical  :    156  (11.5%)
+2026-08-20 21:12:33  
   Provider predictions saved → F:\CTS_main\version2_xg\backend2\models\xgboost_fraud_v2\fraud_predictions_providers.csv
-2026-08-20 21:01:11      Saved: 05_provider_risk_tiers.png
-2026-08-20 21:01:11  
+2026-08-20 21:12:33      Saved: 05_provider_risk_tiers.png
+2026-08-20 21:12:33  
 ======================================================================
-2026-08-20 21:01:11    XGBoost v2 Training Complete — 0:01:45.838463
-2026-08-20 21:01:11    Model saved to: F:\CTS_main\version2_xg\backend2\models\xgboost_fraud_v2\xgboost_fraud_model_v2.pkl
-2026-08-20 21:01:11  ======================================================================
+2026-08-20 21:12:33    XGBoost v2 Training Complete — 0:03:16.618918
+2026-08-20 21:12:33    Model saved to: F:\CTS_main\version2_xg\backend2\models\xgboost_fraud_v2\xgboost_fraud_model_v2.pkl
+2026-08-20 21:12:33  ======================================================================
 
