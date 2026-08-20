@@ -33,7 +33,7 @@ import matplotlib.pyplot    as plt
 import matplotlib.gridspec  as gridspec
 import seaborn              as sns
 
-from sklearn.model_selection  import train_test_split
+from sklearn.model_selection  import train_test_split, StratifiedKFold
 from sklearn.preprocessing    import LabelEncoder
 from sklearn.metrics          import (
     classification_report, confusion_matrix,
@@ -57,7 +57,12 @@ if os.path.basename(CURRENT_DIR).lower() in ("backend", "backend2"):
 else:
     ROOT_DIR = CURRENT_DIR
 
-BASE_DIR   = os.path.join(ROOT_DIR, "processed_data")
+datasets_dir = os.path.join(ROOT_DIR, "datasets")
+if os.path.exists(os.path.join(datasets_dir, "KAGGLE_MASTER_TRAIN.csv")):
+    BASE_DIR = datasets_dir
+else:
+    BASE_DIR = os.path.join(ROOT_DIR, "processed_data")
+
 OUTPUT_DIR = os.path.join(ROOT_DIR, "backend2", "models", "xgboost_fraud_v2")
 
 PATHS = {
@@ -474,10 +479,16 @@ def join_cms_peer_features(prov_df: pd.DataFrame, peer_df: pd.DataFrame,
             prov_df["peer_median_Tot_Benes"].replace(0, np.nan)
         )
 
+    if "peer_median_Bene_Avg_Age" in prov_df.columns:
+        prov_df["avg_age_vs_peer"] = (
+            prov_df["avg_bene_age"] /
+            prov_df["peer_median_Bene_Avg_Age"].replace(0, np.nan)
+        )
+
     if "peer_median_Bene_Avg_Risk_Scre" in prov_df.columns:
         prov_df["avg_risk_score_vs_peer"] = (
-            prov_df["avg_bene_age"] /          # use age as proxy for beneficiary risk complexity
-            prov_df["peer_median_Bene_Avg_Age"].replace(0, np.nan)
+            prov_df["avg_chronic_burden"] /
+            prov_df["peer_median_Bene_Avg_Risk_Scre"].replace(0, np.nan)
         )
 
     logger.info(f"  Provider table after CMS join: {prov_df.shape}")
@@ -532,6 +543,7 @@ CC_RATE_COLS = [
 PEER_FEATURE_COLS = [
     "charge_vs_peer_ratio",
     "benes_vs_peer_ratio",
+    "avg_age_vs_peer",
     "avg_risk_score_vs_peer",
     "peer_median_Tot_Sbmtd_Chrg",
     "peer_median_Tot_Mdcr_Pymt_Amt",
@@ -726,6 +738,46 @@ def run_eda(prov_df: pd.DataFrame, output_dir: str, logger):
     save(fig, "08_feature_correlation.png")
 
     logger.info(f"\n  EDA complete — plots saved to: {eda_dir}")
+
+
+def run_cross_validation(X, y, logger, n_splits=5):
+    """Run Stratified K-Fold Cross-Validation for unbiased metric evaluation."""
+    logger.info("\n" + "="*70)
+    logger.info(f"  STEP 5B — STRATIFIED {n_splits}-FOLD CROSS-VALIDATION")
+    logger.info("="*70)
+
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=RANDOM_STATE)
+    auc_scores, ap_scores = [], []
+
+    for fold, (train_idx, val_idx) in enumerate(skf.split(X, y), 1):
+        X_tr_f, y_tr_f = X[train_idx], y[train_idx]
+        X_va_f, y_va_f = X[val_idx], y[val_idx]
+
+        neg, pos = np.bincount(y_tr_f.astype(int))
+        scale_pw = round(neg / pos, 4)
+
+        fold_model = XGBClassifier(
+            n_estimators=300, max_depth=5, min_child_weight=3,
+            learning_rate=0.03, gamma=0.1, reg_alpha=0.1, reg_lambda=1.0,
+            subsample=0.80, colsample_bytree=0.80, scale_pos_weight=scale_pw,
+            tree_method="hist", eval_metric="aucpr", random_state=RANDOM_STATE,
+            n_jobs=-1, verbosity=0
+        )
+        fold_model.fit(X_tr_f, y_tr_f, eval_set=[(X_va_f, y_va_f)], verbose=False)
+        probs = fold_model.predict_proba(X_va_f)[:, 1]
+        
+        auc_f = roc_auc_score(y_va_f, probs)
+        ap_f  = average_precision_score(y_va_f, probs)
+        auc_scores.append(auc_f)
+        ap_scores.append(ap_f)
+        logger.info(f"  Fold {fold}/{n_splits} — ROC-AUC: {auc_f:.4f}  |  PR-AUC (AP): {ap_f:.4f}")
+
+    mean_auc, std_auc = np.mean(auc_scores), np.std(auc_scores)
+    mean_ap, std_ap   = np.mean(ap_scores), np.std(ap_scores)
+    logger.info(f"\n  Cross-Validation Results ({n_splits}-Fold Stratified):")
+    logger.info(f"    Mean ROC-AUC : {mean_auc:.4f} ± {std_auc:.4f}")
+    logger.info(f"    Mean PR-AUC  : {mean_ap:.4f} ± {std_ap:.4f}")
+    return {"cv_auc_mean": mean_auc, "cv_auc_std": std_auc, "cv_ap_mean": mean_ap, "cv_ap_std": std_ap}
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -996,6 +1048,9 @@ def main():
 
     logger.info(f"\n  Train set : {X_tr.shape[0]:,} providers")
     logger.info(f"  Val set   : {X_val.shape[0]:,} providers")
+
+    # Step 7b: 5-Fold Stratified Cross-Validation
+    cv_results = run_cross_validation(X_df.values, y, logger, n_splits=5)
 
     # Step 8: Train XGBoost
     logger.info("\n" + "="*70)
