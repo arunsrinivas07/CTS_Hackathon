@@ -1,0 +1,20 @@
+# PDF processing
+PyMuPDF>=1.24.0
+
+# OCR
+pytesseract>=0.3.13
+Pillow>=10.0.0
+
+# Data processing - for the later feature engineering / ML stage
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Machine Learning
+scikit-learn>=1.4.0
+
+# Visualization - useful later for model evaluation
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# Model explainability - we'll use this later
+shap>=0.45.0

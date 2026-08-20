@@ -1,0 +1,45 @@
+{
+    "document": {
+        "file_name": "scanned_hospital_bill.png",
+        "file_type": ".png",
+        "extraction_method": "OCR"
+    },
+    "provider": {
+        "name": "Riverside General Hospital (Synthetic)",
+        "provider_id": "SYN-PROV-10482",
+        "address": "100 Health Avenue, Example City, NY 10001"
+    },
+    "patient": {
+        "beneficiary_id": "SYN-BENE-782341",
+        "name": "Alex Morgan (Synthetic)",
+        "date_of_birth": "May 18, 1958",
+        "age_at_service": 68,
+        "coverage": "Original Medicare - Synthetic Example",
+        "member_reference": "SYN-MCR-558812"
+    },
+    "claim": {
+        "claim_number": "SYN-CLM-2026",
+        "claim_type": null,
+        "date_of_service": null,
+        "admission_type": null,
+        "place_of_service": null
+    },
+    "clinical": {
+        "primary_diagnosis_code": null,
+        "primary_diagnosis": null,
+        "attending_specialty": "Cardiology"
+    },
+    "services": [],
+    "financial": {
+        "total_billed": 5740.0,
+        "medicare_approved_amount": 4200.0,
+        "medicare_payment": 3360.0,
+        "beneficiary_responsibility": 840.0
+    },
+    "supporting_documents": [
+        "Physician order / clinical note",
+        "Laboratory result",
+        "CT procedure report",
+        "Itemized provider bill"
+    ]
+}

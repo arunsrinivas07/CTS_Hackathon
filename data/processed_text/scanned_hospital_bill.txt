@@ -1,0 +1,22 @@
+: "SYNTHETIC MEDICARE HOSPITAL CLAIM / ITEMIZED BILL :
+DEMO DATA — NOTA REAL PATIENT RECQRD — NOT VALID FOR MEDICARE SUBMISSION OR PAYMENT.
+Provider Information Claim Information
+Provider: Riverside General Hospital (Synthetic), Claim Number: SYN-CLM-2026-001247
+Provider ID: SYN-PROV-10482 Claim Type: Synthetic Institutional / Hospital Claim
+Address: 100 Health Avenue, Example City, NY 10001 Date of Service: August 12, 2026 — August 14, 2026
+Beneficiary ID: SYN-BENE-782341 Primary Diagnosis: RO7.9 — Chest pain, unspecified (synthetic example)
+Patient Name: Alex Morgan (Synthetic) Admission Type: Emergency / Inpatient
+Date of Birth: May 18, 1958 _ Place of Service: 21 = Inpatient Hospital
+Medicare Coverage: Original Medicare — Synthetic Example Attending Specialty: Cardiology
+Member/Policy Reference: _« SYN-MCR-558812 :
+ITEMIZED SERVICES
+ee 0 eee ee ee ee
+PAYMENT / CLAIM SUMMARY : : z SUPPORTING DOCUMENTATION INDEX
+Total Provider Billed Charges: $5,740.00 Document "Status
+Synthetic Medicare-Approved Amount: $4,200.00 Physician order / clinical note Available — synthetic
+Synthetic Medicare Payment: $3,360.00 Laboratory result Available — synthetic
+Synthetic Beneficiary Responsibility: $840.00 CT procedure report Available — synthetic
+Itemized provider bill This document
+Prototype purpose: This synthetic PDF is designed for a healthcare fraud/waste/abuse detection prototype. It can be used as a
+document-layer input alongside structured claim data. It is intentionally synthetic and must not be submitted to Medicare, an insurer, or a
+healthcare provider as a real claim or bill.

@@ -1,0 +1,99 @@
+SYNTHETIC MEDICARE HOSPITAL CLAIM / ITEMIZED BILL
+DEMO DATA — NOT A REAL PATIENT RECORD — NOT VALID FOR MEDICARE SUBMISSION OR PAYMENT
+Provider Information
+Provider
+Riverside General Hospital (Synthetic)
+Provider ID
+SYN-PROV-10482
+Address
+100 Health Avenue, Example City, NY 10001
+Claim Number
+SYN-CLM-2026-001247
+Claim Type
+Synthetic Institutional / Hospital Claim
+Date of Service
+August 12, 2026 – August 14, 2026
+Patient / Beneficiary Information
+Synthetic Beneficiary ID
+SYN-BENE-782341
+Patient Name
+Alex Morgan (Synthetic)
+Date of Birth
+May 18, 1958
+Medicare Coverage
+Original Medicare — Synthetic Example
+Member/Policy Reference
+SYN-MCR-558812
+Clinical / Service Information
+Primary Diagnosis
+R07.9 — Chest pain, unspecified (synthetic example)
+Admission Type
+Emergency / Inpatient
+Place of Service
+21 — Inpatient Hospital
+Attending Specialty
+Cardiology
+Itemized Services
+Date
+Service / Procedure
+Code
+Qty
+Billed
+08/12/26
+Emergency department evaluation
+99285
+1
+$850.00
+08/12/26
+Electrocardiogram
+93010
+1
+$180.00
+08/12/26
+Troponin laboratory test
+84484
+2
+$240.00
+08/12/26
+Chest X-ray
+71046
+1
+$320.00
+08/13/26
+CT chest diagnostic imaging
+71275
+1
+$2,400.00
+08/13/26
+Cardiology consultation
+99223
+1
+$1,100.00
+08/14/26
+Inpatient follow-up care
+99232
+1
+$650.00
+Payment / Claim Summary
+Total Provider Billed Charges
+$5,740.00
+Synthetic Medicare-Approved Amount
+$4,200.00
+Synthetic Medicare Payment
+$3,360.00
+Synthetic Beneficiary Responsibility
+$840.00
+Supporting Documentation Index
+Document
+Status
+Physician order / clinical note
+Available — synthetic
+Laboratory result
+Available — synthetic
+CT procedure report
+Available — synthetic
+Itemized provider bill
+This document
+Prototype purpose: This synthetic PDF is designed for a healthcare fraud/waste/abuse detection prototype. It can be used as a
+document-layer input alongside structured claim data. It is intentionally synthetic and must not be submitted to Medicare, an insurer, or a
+healthcare provider as a real claim or bill.

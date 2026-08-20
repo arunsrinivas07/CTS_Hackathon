@@ -1,0 +1,94 @@
+{
+    "document": {
+        "file_name": "hospital_bill.pdf",
+        "file_type": ".pdf"
+    },
+    "provider": {
+        "name": "Riverside General Hospital (Synthetic)",
+        "provider_id": "SYN-PROV-10482",
+        "address": "100 Health Avenue, Example City, NY 10001"
+    },
+    "patient": {
+        "beneficiary_id": "SYN-BENE-782341",
+        "name": "Alex Morgan (Synthetic)",
+        "date_of_birth": "May 18, 1958",
+        "age": 68,
+        "coverage": "Original Medicare — Synthetic Example",
+        "member_reference": "SYN-MCR-558812"
+    },
+    "claim": {
+        "claim_number": "SYN-CLM-2026-001247",
+        "claim_type": "Synthetic Institutional / Hospital Claim",
+        "date_of_service": "August 12, 2026 – August 14, 2026",
+        "admission_type": "Emergency / Inpatient",
+        "place_of_service": "21 — Inpatient Hospital"
+    },
+    "clinical": {
+        "primary_diagnosis_code": "R07.9",
+        "primary_diagnosis": "Chest pain, unspecified (synthetic example)",
+        "attending_specialty": "Cardiology"
+    },
+    "services": [
+        {
+            "date": "08/12/26",
+            "procedure": "Emergency department evaluation",
+            "procedure_code": "99285",
+            "quantity": 1,
+            "billed_amount": 850.0
+        },
+        {
+            "date": "08/12/26",
+            "procedure": "Electrocardiogram",
+            "procedure_code": "93010",
+            "quantity": 1,
+            "billed_amount": 180.0
+        },
+        {
+            "date": "08/12/26",
+            "procedure": "Troponin laboratory test",
+            "procedure_code": "84484",
+            "quantity": 2,
+            "billed_amount": 240.0
+        },
+        {
+            "date": "08/12/26",
+            "procedure": "Chest X-ray",
+            "procedure_code": "71046",
+            "quantity": 1,
+            "billed_amount": 320.0
+        },
+        {
+            "date": "08/13/26",
+            "procedure": "CT chest diagnostic imaging",
+            "procedure_code": "71275",
+            "quantity": 1,
+            "billed_amount": 2400.0
+        },
+        {
+            "date": "08/13/26",
+            "procedure": "Cardiology consultation",
+            "procedure_code": "99223",
+            "quantity": 1,
+            "billed_amount": 1100.0
+        },
+        {
+            "date": "08/14/26",
+            "procedure": "Inpatient follow-up care",
+            "procedure_code": "99232",
+            "quantity": 1,
+            "billed_amount": 650.0
+        }
+    ],
+    "financial": {
+        "total_billed": 5740.0,
+        "medicare_approved_amount": 4200.0,
+        "medicare_payment": 3360.0,
+        "beneficiary_responsibility": 840.0
+    },
+    "supporting_documents": [
+        "Physician order / clinical note",
+        "Laboratory result",
+        "CT procedure report",
+        "Itemized provider bill"
+    ]
+}
