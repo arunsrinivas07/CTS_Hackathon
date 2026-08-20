@@ -392,6 +392,11 @@ def aggregate_to_provider(df: pd.DataFrame, has_label: bool, logger) -> pd.DataF
 
     prov_df = prov_df.rename(columns=rename_map)
 
+    # For single-claim providers (n=1), std is NaN. Explicitly set to 0.0 to prevent
+    # imputation from fabricating an artificial training-set variance.
+    if "std_claim_reimbursed" in prov_df.columns:
+        prov_df["std_claim_reimbursed"] = prov_df["std_claim_reimbursed"].fillna(0.0)
+
     # Derived ratio features (upcoding & volume anomaly signals)
     prov_df["physician_stacking_rate"] = (prov_df["avg_physician_count"] >= 3).astype(int)
     prov_df["claims_per_beneficiary"]  = (

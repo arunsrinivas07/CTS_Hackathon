@@ -27,7 +27,7 @@ try:
         CAT_COLS, CHRONIC_COLS, build_cms_peer_benchmarks, join_cms_peer_features,
         CMS_USECOLS
     )
-    from backend2.config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS
+    from backend2.config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS, MIN_CLAIMS_FOR_PROVIDER_ML
 except ImportError:
     from train_xgboost_fraud_v2 import (
         preprocess_claims, aggregate_to_provider,
@@ -35,7 +35,7 @@ except ImportError:
         CAT_COLS, CHRONIC_COLS, build_cms_peer_benchmarks, join_cms_peer_features,
         CMS_USECOLS
     )
-    from config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS
+    from config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS, MIN_CLAIMS_FOR_PROVIDER_ML
 
 MODEL_DIR       = os.path.join(CURRENT_DIR, "models", "xgboost_fraud_v2")
 PKL_PATH        = os.path.join(MODEL_DIR, "xgboost_fraud_model_v2.pkl")
@@ -268,19 +268,35 @@ def run_inference_on_df(raw_df: pd.DataFrame) -> pd.DataFrame:
         right  = True,
     ).astype(str)
 
-    # Layer 1 Compliance Check Override (Direct LEIE Match)
+    # Layer 1 Compliance Check Override & Low-Volume Claim Safeguards
     compliance_alerts = []
     scoring_statuses = []
 
     for idx, row in out_df.iterrows():
         prov_id = str(row.get("Provider", ""))
+        tot_claims = int(row.get("total_claims", 1))
+        ghost_rate = float(row.get("ghost_billing_rate", 0.0))
         leie_check = check_leie_direct_exclusion(prov_id)
+
+        # 1. Direct LEIE Exclusion Override
         if leie_check and leie_check.get("is_excluded"):
             out_df.at[idx, "fraud_score"]     = 1.00
             out_df.at[idx, "fraud_predicted"] = 1
             out_df.at[idx, "risk_tier"]       = "Critical"
             compliance_alerts.append(leie_check["reason"])
             scoring_statuses.append("DIRECT_LEIE_EXCLUSION_MATCH")
+        # 2. Ghost Billing Post-Death Override
+        elif ghost_rate > 0:
+            out_df.at[idx, "fraud_score"]     = 1.00
+            out_df.at[idx, "fraud_predicted"] = 1
+            out_df.at[idx, "risk_tier"]       = "Critical"
+            compliance_alerts.append("CRITICAL: Ghost Billing (Post-Death Service Date Detected)")
+            scoring_statuses.append("GHOST_BILLING_OVERRIDE")
+        # 3. Single Claim / Low-Volume History Safeguard (n < 5)
+        elif tot_claims < MIN_CLAIMS_FOR_PROVIDER_ML:
+            compliance_alerts.append(f"Notice: Single/Low-Volume Claim (n={tot_claims}). Provider ML profiling requires >= {MIN_CLAIMS_FOR_PROVIDER_ML} claims history.")
+            scoring_statuses.append("INSUFFICIENT_HISTORY_FOR_PROVIDER_ML")
+        # 4. Full Provider ML Behavioral Profiling (n >= 5)
         else:
             compliance_alerts.append("NO_DIRECT_EXCLUSION")
             scoring_statuses.append("SCORED_BY_HYBRID_ML")

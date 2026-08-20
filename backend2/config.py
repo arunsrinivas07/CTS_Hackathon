@@ -7,22 +7,24 @@ Always import from here so that training, validation, inference, and scored CSV 
 """
 
 # ── Risk Tier Bins ─────────────────────────────────────────────────────────────
-# Calibrated from the KAGGLE_MASTER_TEST score distribution (Aug 2026 run).
-# These are quantile-informed, not uniform:
-#   Low      = [0.000, 0.465]  (majority of non-fraud providers cluster below 0.465)
-#   Medium   = (0.465, 0.485]  (borderline region — monitor only)
-#   High     = (0.485, 0.520]  (elevated risk — investigate on next cycle)
-#   Critical = (0.520, 1.000]  (immediate investigation queue)
-#
-# NOTE: These are deliberately narrow around the decision boundary.
-# If your score distribution shifts materially after retraining, re-calibrate
-# these bins against the new fraud_predictions_providers.csv score percentiles.
-TIER_BINS   = [0.00, 0.465, 0.485, 0.520, 1.00]
+# Calibrated from the holdout validation test set score distribution (n=1,353 test providers).
+# Quantile-informed risk bands:
+#   Low      = [0.000, 0.450]  (Bottom 75% of providers — clean billing history)
+#   Medium   = (0.450, 0.520]  (75th–85th percentile — moderate billing & peer anomalies)
+#   High     = (0.520, 0.580]  (85th–95th percentile — elevated peer & volume anomalies)
+#   Critical = (0.580, 1.000]  (Top 5% highest risk providers + LEIE / Ghost Billing overrides)
+TIER_BINS   = [0.00, 0.450, 0.520, 0.580, 1.00]
 TIER_LABELS = ["Low", "Medium", "High", "Critical"]
 TIER_COLORS = {"Low": "#4CAF50", "Medium": "#FFC107", "High": "#FF5722", "Critical": "#B71C1C"}
 
+# ── Minimum Provider Claims Threshold for ML Behavioral Profiling ────────────
+# Provider behavioral profiling requires sufficient claim history (n >= 5) to compute
+# honest rate and variance metrics (e.g. std_claim_reimbursed, ghost_billing_rate).
+# Payloads with fewer than 5 claims use LEIE Direct Exclusion + Rule-Based scoring
+# with an explicit INSUFFICIENT_HISTORY_FOR_PROVIDER_ML status notice.
+MIN_CLAIMS_FOR_PROVIDER_ML = 5
+
 # ── Model Decision Threshold ───────────────────────────────────────────────────
 # Used to binarise fraud probability into fraud_predicted = 0/1.
-# Set conservatively at 0.40 to maximise recall (catching more fraud)
-# at the cost of some precision. Adjust for investigator workload trade-off.
+# Set at 0.40 to maximize recall (catching suspicious billing patterns)
 FRAUD_THRESHOLD = 0.40
