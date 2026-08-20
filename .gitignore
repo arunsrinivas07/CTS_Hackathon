@@ -1,0 +1,33 @@
+# Environment variables
+.env
+.env.*
+*.env
+
+# Python bytecode & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# Node.js dependencies & builds
+node_modules/
+dist/
+build/
+.next/
+
+# Exclude Large Datasets
+datasets/*.csv
+datasets/*.zip
+datasets/
+processed_data/
+
+# Debug logs and temporary claims JSONs
+extracted_claims_debug.json
+extracted_claims_logs/
+*.log
+
+# OS metadata
+.DS_Store
+Thumbs.db

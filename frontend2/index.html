@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareGuard AI — Provider Intelligence Dashboard (v2)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #080C16;
+            --card-bg: rgba(14, 21, 40, 0.8);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary: #6366F1;
+            --primary-dark: #4F46E5;
+            --primary-gradient: linear-gradient(135deg, #6366F1, #4338CA);
+            --v2-accent: #A78BFA;
+            --accent-red: #EF4444;
+            --accent-green: #10B981;
+            --accent-yellow: #F59E0B;
+            --accent-orange: #F97316;
+            --text-main: #F1F5F9;
+            --text-muted: #64748B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image:
+                radial-gradient(at 10% 5%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+                radial-gradient(at 90% 95%, rgba(167, 139, 250, 0.08) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(79, 70, 229, 0.04) 0px, transparent 80%);
+        }
+
+        header {
+            padding: 1.1rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(8, 12, 22, 0.95);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: #fff;
+        }
+
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: var(--primary-gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .v2-badge {
+            background: linear-gradient(135deg, #6366F1, #A78BFA);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            letter-spacing: 0.05em;
+        }
+
+        nav {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.55rem 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn.active,
+        .nav-btn:hover {
+            background: rgba(99, 102, 241, 0.15);
+            color: #A78BFA;
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Hero Banner for v2 */
+        .v2-hero {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(167, 139, 250, 0.08));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .v2-hero-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #A78BFA;
+            margin-bottom: 0.3rem;
+        }
+
+        .v2-hero-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        .v2-compare-badge {
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            border-radius: 10px;
+            padding: 0.75rem 1.25rem;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .v2-compare-badge small {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .v2-compare-badge strong {
+            color: #A78BFA;
+            font-size: 0.95rem;
+        }
+
+        .grid-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1.25rem;
+            border-radius: 14px;
+            backdrop-filter: blur(10px);
+            transition: border-color 0.2s;
+        }
+
+        .metric-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .metric-title {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-val {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .metric-sub {
+            font-size: 0.72rem;
+            color: var(--accent-green);
+            margin-top: 0.25rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .drop-zone {
+            border: 2px dashed rgba(99, 102, 241, 0.4);
+            border-radius: 14px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            background: rgba(99, 102, 241, 0.03);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .drop-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .btn-group-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+
+        .btn {
+            background: var(--primary-gradient);
+            color: #fff;
+            border: none;
+            padding: 0.65rem 1.2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.84rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-color);
+            color: #fff;
+        }
+
+        .btn-low {
+            border-left: 3px solid #10B981;
+        }
+
+        .btn-med {
+            border-left: 3px solid #F59E0B;
+        }
+
+        .btn-high {
+            border-left: 3px solid #F97316;
+        }
+
+        .btn-crit {
+            border-left: 3px solid #EF4444;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.88rem;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .badge {
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+        }
+
+        .badge-low {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34D399;
+        }
+
+        .badge-medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: #FBBF24;
+        }
+
+        .badge-high {
+            background: rgba(249, 115, 22, 0.15);
+            color: #FB923C;
+        }
+
+        .badge-critical {
+            background: rgba(239, 68, 68, 0.15);
+            color: #F87171;
+        }
+
+        .badge-v2 {
+            background: rgba(99, 102, 241, 0.2);
+            color: #A78BFA;
+        }
+
+        .plots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .plot-card {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            padding: 1rem;
+        }
+
+        .plot-card img {
+            width: 100%;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .plot-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-main);
+        }
+
+        /* Provider detail panel */
+        .provider-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 0.75rem;
+            font-size: 0.82rem;
+            color: #D1D5DB;
+        }
+
+        .detail-item strong {
+            color: #818CF8;
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+
+        /* Risk meter bar */
+        .risk-bar-wrap {
+            margin-top: 0.5rem;
+        }
+
+        .risk-bar-bg {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 99px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .risk-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.6s ease;
+        }
+
+        /* Peer benchmark comparison cards */
+        .peer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .peer-card {
+            background: rgba(99, 102, 241, 0.06);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+        }
+
+        .peer-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.4rem;
+        }
+
+        .peer-val {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #A78BFA;
+        }
+
+        .peer-sub {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #A78BFA;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .form-group label {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .form-control {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 0.65rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">🏥</div>
+            <span>CareGuard AI — Provider Intelligence</span>
+            <span class="v2-badge">v2</span>
+        </div>
+        <nav>
+            <button class="nav-btn active" onclick="switchTab('dashboard', event)">Model Dashboard</button>
+            <button class="nav-btn" onclick="switchTab('audit', event)">Provider Audit Queue</button>
+            <button class="nav-btn" onclick="switchTab('simulator', event)">Provider Simulator</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- TAB 1: MODEL DASHBOARD -->
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="v2-hero">
+                <div>
+                    <div class="v2-hero-title">🔬 Provider-Level Fraud Intelligence — XGBoost v2</div>
+                    <div class="v2-hero-desc">
+                        This model aggregates all claim rows into a <strong>single provider-level feature
+                            vector</strong>,
+                        enriches it with <strong>CMS peer benchmark statistics</strong> (billing volume vs. state ×
+                        specialty median),
+                        and detects provider-level billing fraud patterns invisible at the individual claim level.
+                    </div>
+                </div>
+                <div style="display:flex;gap:1rem">
+                    <div class="v2-compare-badge">
+                        <small>v1 Claim Model</small>
+                        <strong>ROC-AUC 0.8111</strong>
+                    </div>
+                    <div class="v2-compare-badge">
+                        <small>v2 Provider Model</small>
+                        <strong id="v2-auc-badge">Loading...</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-metrics" id="metrics-container">
+                <div class="metric-card">
+                    <div class="metric-title">ROC-AUC Score</div>
+                    <div class="metric-val" id="m-auc">—</div>
+                    <div class="metric-sub">Provider-Level Model</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Avg Precision (AP)</div>
+                    <div class="metric-val" id="m-ap">—</div>
+                    <div class="metric-sub">Precision-Recall Area</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">F1 Score</div>
+                    <div class="metric-val" id="m-f1">—</div>
+                    <div class="metric-sub">Harmonic Mean</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">MCC</div>
+                    <div class="metric-val" id="m-mcc">—</div>
+                    <div class="metric-sub">Matthews Correlation</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Decision Threshold</div>
+                    <div class="metric-val" id="m-threshold">0.40</div>
+                    <div class="metric-sub">Fraud Flag Cutoff</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Feature Count</div>
+                    <div class="metric-val" id="m-features">—</div>
+                    <div class="metric-sub">Provider + CMS Peer</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">XGBoost v2 — Provider Intelligence Model Plots</div>
+                    <span class="badge badge-v2">Provider-Level</span>
+                </div>
+                <div class="plots-grid">
+                    <div class="plot-card">
+                        <div class="plot-title">ROC Curve — Provider Fraud Detection</div>
+                        <img src="/plots/01_roc_curve.png" alt="ROC Curve"
+                            onerror="this.parentElement.innerHTML='<div style=\'padding:2rem;text-align:center;color:#64748B;\'>📊 Train model first to see plots</div>'">
+                    </div>
+                    <div class="plot-card">
+                        <div class="plot-title">Precision-Recall Curve</div>
+                        <img src="/plots/02_precision_recall_curve.png" alt="PR Curve"
+                            onerror="this.parentElement.innerHTML='<div style=\'padding:2rem;text-align:center;color:#64748B;\'>📊 Train model first to see plots</div>'">
+                    </div>
+                    <div class="plot-card">
+                        <div class="plot-title">Confusion Matrix</div>
+                        <img src="/plots/03_confusion_matrix.png" alt="Confusion Matrix"
+                            onerror="this.parentElement.innerHTML='<div style=\'padding:2rem;text-align:center;color:#64748B;\'>📊 Train model first to see plots</div>'">
+                    </div>
+                    <div class="plot-card">
+                        <div class="plot-title">Top 25 Provider Feature Importances (Gain)</div>
+                        <img src="/plots/04_feature_importance.png" alt="Feature Importance"
+                            onerror="this.parentElement.innerHTML='<div style=\'padding:2rem;text-align:center;color:#64748B;\'>📊 Train model first to see plots</div>'">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: PROVIDER AUDIT QUEUE -->
+        <div id="tab-audit" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Upload Medicare Claims File — Provider-Level Analysis</div>
+                    <span class="badge badge-v2">Provider Aggregation Active</span>
+                </div>
+                <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                    <div class="drop-icon">📁</div>
+                    <h3>Drag & Drop claims file here or click to browse</h3>
+                    <p style="color: var(--text-muted); margin-top: 0.5rem; font-size: 0.84rem;">
+                        Upload a PDF, TXT, or CSV — claims will be <strong>aggregated to provider level</strong>
+                        and enriched with CMS peer benchmarks before scoring.
+                    </p>
+                    <input type="file" id="file-input" style="display: none"
+                        onchange="uploadSelectedFile(this.files[0])">
+                </div>
+                <div style="margin-top: 1.25rem;">
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600;">
+                        ⚡ TEST DEDICATED v2 PROVIDER BATCH SAMPLES:</div>
+                    <div class="btn-group-grid">
+                        <button class="btn btn-secondary btn-low" onclick="loadSampleFile('low_risk_provider.pdf')">🟢
+                            Low
+                            Risk Provider (.pdf)</button>
+                        <button class="btn btn-secondary btn-med"
+                            onclick="loadSampleFile('medium_risk_provider.pdf')">🟡
+                            Medium Risk Provider (.pdf)</button>
+                        <button class="btn btn-secondary btn-high" onclick="loadSampleFile('high_risk_provider.pdf')">🟠
+                            High Risk Provider (.pdf)</button>
+                        <button class="btn btn-secondary btn-crit"
+                            onclick="loadSampleFile('critical_risk_provider.pdf')">🔴 Critical Risk Provider
+                            (.pdf)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="results-card" style="display: none;">
+                <div class="card-header">
+                    <div class="card-title" id="results-title">Provider Investigation Queue</div>
+                    <div id="tier-summary-badges" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+                </div>
+                <div class="table-responsive">
+                    <table id="claims-table">
+                        <thead>
+                            <tr>
+                                <th>Provider ID</th>
+                                <th>Total Claims</th>
+                                <th>Total Reimbursement</th>
+                                <th>Ghost Billing Rate</th>
+                                <th>Avg Physicians</th>
+                                <th>Fraud Score</th>
+                                <th>Risk Tier</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="claims-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: PROVIDER SIMULATOR -->
+        <div id="tab-simulator" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Provider-Level Fraud Risk Simulator</div>
+                    <span class="badge badge-v2">Aggregated Provider Profile</span>
+                </div>
+                <form id="sim-form" onsubmit="runProviderSimulation(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Total Claims Filed</label>
+                            <input type="number" id="sim-claims" class="form-control" value="450" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Total Reimbursement ($)</label>
+                            <input type="number" id="sim-reimb" class="form-control" value="2500000" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Unique Beneficiaries</label>
+                            <input type="number" id="sim-benes" class="form-control" value="180" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Ghost Billing Rate (0–1)</label>
+                            <input type="number" id="sim-ghost" class="form-control" value="0.08" step="0.01" min="0"
+                                max="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Avg Physicians per Claim</label>
+                            <input type="number" id="sim-phy" class="form-control" value="2.5" step="0.1" min="0"
+                                max="3">
+                        </div>
+                        <div class="form-group">
+                            <label>Avg Chronic Burden (0–11)</label>
+                            <input type="number" id="sim-cc" class="form-control" value="4" min="0" max="11">
+                        </div>
+                        <div class="form-group">
+                            <label>IP Claim Ratio (0–1)</label>
+                            <input type="number" id="sim-ip" class="form-control" value="0.6" step="0.05" min="0"
+                                max="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Primary State (2-letter)</label>
+                            <input type="text" id="sim-state" class="form-control" value="FL" maxlength="2">
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem; text-align: right;">
+                        <button type="submit" class="btn">⚡ Run Provider Fraud Analysis</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card" id="sim-result-card" style="display: none;">
+                <div class="card-header">
+                    <div class="card-title">Provider Fraud Intelligence Report</div>
+                    <span class="badge badge-v2">v2 Provider Model</span>
+                </div>
+                <div style="display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap;">
+                    <div
+                        style="text-align: center; padding: 1.75rem; background: rgba(0,0,0,0.3); border-radius: 14px; min-width: 190px; border: 1px solid rgba(99,102,241,0.2);">
+                        <div
+                            style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem;">
+                            Fraud Probability</div>
+                        <div id="sim-score-display"
+                            style="font-size: 2.8rem; font-weight: 800; color: #fff; margin: 0.25rem 0;">—</div>
+                        <div id="sim-badge-display"></div>
+                        <div class="risk-bar-wrap" style="margin-top: 1rem;">
+                            <div class="risk-bar-bg">
+                                <div class="risk-bar-fill" id="sim-bar" style="width: 0%; background: #10B981;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="flex: 1; min-width: 280px;">
+                        <h4 id="sim-headline" style="margin-bottom: 0.6rem; color: #fff; font-size: 1.05rem;"></h4>
+                        <p id="sim-detail-desc"
+                            style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65;"></p>
+                        <div id="peer-benchmarks" class="peer-grid" style="margin-top: 1.25rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8002';
+
+        // Load model info on startup
+        async function loadModelInfo() {
+            try {
+                const res = await fetch(API_BASE + '/api/model_info');
+                if (!res.ok) return;
+                const data = await res.json();
+                const metrics = data.metrics || {};
+
+                const setM = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = val !== undefined ? val : '—';
+                };
+
+                setM('m-auc', metrics.roc_auc ? metrics.roc_auc.toFixed(4) : '(train model)');
+                setM('m-ap', metrics.avg_precision ? metrics.avg_precision.toFixed(4) : '—');
+                setM('m-f1', metrics.f1 ? metrics.f1.toFixed(4) : '—');
+                setM('m-mcc', metrics.mcc ? metrics.mcc.toFixed(4) : '—');
+                setM('m-threshold', data.threshold || 0.40);
+                setM('m-features', data.features_count || '—');
+
+                const badge = document.getElementById('v2-auc-badge');
+                if (badge && metrics.roc_auc) {
+                    badge.innerText = 'ROC-AUC ' + metrics.roc_auc.toFixed(4);
+                }
+            } catch (e) {
+                console.log('Model info not available:', e.message);
+            }
+        }
+        loadModelInfo();
+
+        function switchTab(tabId, evt) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            if (evt && evt.target) evt.target.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        const dropZone = document.getElementById('drop-zone');
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) uploadSelectedFile(e.dataTransfer.files[0]);
+        });
+
+        async function uploadSelectedFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            const dropEl = document.getElementById('drop-zone');
+            dropEl.innerHTML = '<div class="spinner"></div><p style="margin-top:0.75rem;color:#64748B;font-size:0.85rem;">Aggregating claims to provider level...</p>';
+
+            try {
+                const res = await fetch(API_BASE + '/api/predict_file', { method: 'POST', body: formData });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Failed');
+                }
+                const data = await res.json();
+                displayAuditResults(data, file.name);
+            } catch (err) {
+                alert('Error: ' + err.message);
+            } finally {
+                dropEl.innerHTML = `
+                    <div class="drop-icon">📁</div>
+                    <h3>Drag & Drop claims file here or click to browse</h3>
+                    <p style="color: var(--text-muted); margin-top: 0.5rem; font-size: 0.84rem;">Upload a PDF, TXT, or CSV — claims will be <strong>aggregated to provider level</strong> and enriched with CMS peer benchmarks before scoring.</p>
+                    <input type="file" id="file-input" style="display: none" onchange="uploadSelectedFile(this.files[0])">
+                `;
+                dropEl.onclick = () => document.getElementById('file-input').click();
+            }
+        }
+
+        async function loadSampleFile(filename) {
+            try {
+                const fetchRes = await fetch(API_BASE + '/sample_files/' + filename);
+                if (!fetchRes.ok) throw new Error('Sample file not found: ' + filename);
+                const blob = await fetchRes.blob();
+                const file = new File([blob], filename, { type: filename.endsWith('.pdf') ? 'application/pdf' : 'text/plain' });
+                await uploadSelectedFile(file);
+            } catch (err) {
+                alert('Error loading sample: ' + err.message);
+            }
+        }
+
+        function riskColor(score) {
+            if (score >= 0.70) return '#EF4444';
+            if (score >= 0.50) return '#F97316';
+            if (score >= 0.30) return '#F59E0B';
+            return '#10B981';
+        }
+
+        function displayAuditResults(data, filename) {
+            document.getElementById('results-card').style.display = 'block';
+            document.getElementById('results-title').innerText =
+                `Provider Investigation Queue — ${data.total_providers || '?'} Provider(s) from "${filename}" [v2 Model]`;
+
+            const badgesEl = document.getElementById('tier-summary-badges');
+            badgesEl.innerHTML = '';
+            for (const [tier, count] of Object.entries(data.tier_counts || {})) {
+                const b = document.createElement('span');
+                b.className = `badge badge-${tier.toLowerCase()}`;
+                b.innerText = `${tier}: ${count}`;
+                badgesEl.appendChild(b);
+            }
+
+            const tbody = document.getElementById('claims-body');
+            tbody.innerHTML = '';
+
+            (data.providers || []).forEach((prov, idx) => {
+                const tr = document.createElement('tr');
+                const detailRow = document.createElement('tr');
+                detailRow.id = `detail-row-${idx}`;
+                detailRow.style.display = 'none';
+                detailRow.style.background = 'rgba(99,102,241,0.04)';
+
+                const score = parseFloat(prov.fraud_score || 0);
+                const tierClass = `badge-${(prov.risk_tier || 'low').toLowerCase()}`;
+                const totalClaims = prov.total_claims !== undefined ? parseInt(prov.total_claims) : '—';
+                const totalReimb = prov.total_reimbursement !== undefined ?
+                    parseFloat(prov.total_reimbursement).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }) : '—';
+                const ghostRate = prov.ghost_billing_rate !== undefined ?
+                    (parseFloat(prov.ghost_billing_rate) * 100).toFixed(1) + '%' : '—';
+                const avgPhy = prov.avg_physician_count !== undefined ?
+                    parseFloat(prov.avg_physician_count).toFixed(2) : '—';
+                const avgCC = prov.avg_chronic_burden !== undefined ?
+                    parseFloat(prov.avg_chronic_burden).toFixed(2) : '—';
+                const chargeVsPeer = prov.charge_vs_peer_ratio !== undefined && prov.charge_vs_peer_ratio !== null ?
+                    parseFloat(prov.charge_vs_peer_ratio).toFixed(2) + '×' : 'N/A';
+
+                tr.innerHTML = `
+                    <td><strong>${prov.Provider || 'PROV-UNKN'}</strong></td>
+                    <td>${totalClaims}</td>
+                    <td>${totalReimb}</td>
+                    <td style="color: ${parseFloat(prov.ghost_billing_rate || 0) > 0.05 ? '#F87171' : '#34D399'}">${ghostRate}</td>
+                    <td style="color: ${parseFloat(prov.avg_physician_count || 0) >= 2.5 ? '#FBBF24' : '#D1D5DB'}">${avgPhy}</td>
+                    <td>
+                        <strong style="color: ${riskColor(score)}">${(score * 100).toFixed(1)}%</strong>
+                        <div class="risk-bar-bg" style="margin-top:4px;"><div class="risk-bar-fill" style="width:${(score * 100).toFixed(0)}%;background:${riskColor(score)};"></div></div>
+                    </td>
+                    <td><span class="badge ${tierClass}">${prov.risk_tier || 'Low'}</span></td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="toggleDetails(${idx})" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">🔍 Details</button>
+                        <button class="btn btn-secondary" onclick="alert('Provider ' + '${prov.Provider || ''}' + ' flagged for OIG audit!')" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; margin-left: 0.25rem;">Flag</button>
+                    </td>
+                `;
+
+                detailRow.innerHTML = `
+                    <td colspan="8" style="padding: 1rem 1.5rem;">
+                        <div class="provider-detail-grid">
+                            <div class="detail-item"><strong>Primary State</strong>${prov.primary_state || '—'}</div>
+                            <div class="detail-item"><strong>Avg Chronic Burden</strong>${avgCC} conditions/claim</div>
+                            <div class="detail-item"><strong>IP Claim Ratio</strong>${prov.ip_claim_ratio !== undefined ? (parseFloat(prov.ip_claim_ratio) * 100).toFixed(1) + '%' : '—'}</div>
+                            <div class="detail-item"><strong>Charge vs Peer Median</strong>${chargeVsPeer}</div>
+                            <div class="detail-item"><strong>Unique Beneficiaries</strong>${prov.unique_beneficiaries || '—'}</div>
+                            <div class="detail-item"><strong>Avg Claim Duration</strong>${prov.avg_claim_duration !== undefined ? parseFloat(prov.avg_claim_duration).toFixed(1) + ' days' : '—'}</div>
+                            <div class="detail-item"><strong>Avg LOS (IP)</strong>${prov.avg_los !== undefined ? parseFloat(prov.avg_los).toFixed(1) + ' days' : '—'}</div>
+                            <div class="detail-item"><strong>Renal Disease Rate</strong>${prov.renal_disease_rate !== undefined ? (parseFloat(prov.renal_disease_rate) * 100).toFixed(1) + '%' : '—'}</div>
+                            <div class="detail-item"><strong>LEIE State Flag</strong>${prov.is_leie_state_risk ? '⚠️ Yes — OIG Excluded' : '✅ No'}</div>
+                        </div>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+                tbody.appendChild(detailRow);
+            });
+        }
+
+        function toggleDetails(idx) {
+            const row = document.getElementById(`detail-row-${idx}`);
+            if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+        }
+
+        async function runProviderSimulation(e) {
+            e.preventDefault();
+
+            // Build a synthetic claim row matching the provider's profile
+            const totalClaims = parseInt(document.getElementById('sim-claims').value);
+            const totalReimb = parseFloat(document.getElementById('sim-reimb').value);
+            const ghostRate = parseFloat(document.getElementById('sim-ghost').value);
+            const avgPhy = parseFloat(document.getElementById('sim-phy').value);
+            const avgCC = parseInt(document.getElementById('sim-cc').value);
+            const ipRatio = parseFloat(document.getElementById('sim-ip').value);
+            const state = document.getElementById('sim-state').value.toUpperCase();
+            const uniqueBenes = parseInt(document.getElementById('sim-benes').value);
+            const avgAmt = totalReimb / Math.max(totalClaims, 1);
+
+            // We send a representative claim row and let the backend aggregate it
+            // For simulation we send a pre-built JSON with raw claim fields
+            const claim = {
+                Provider: "SIM-PROV-001",
+                BeneID: "SIM-BENE-001",
+                ClaimID: "SIM-CLM-00001",
+                ClaimStartDt: ghostRate > 0.05 ? "2023-05-01" : "2023-06-01",
+                ClaimEndDt: ghostRate > 0.05 ? "2023-05-15" : "2023-06-10",
+                DOB: "1945-01-01",
+                DOD: ghostRate > 0.05 ? "2023-04-01" : "",
+                InscClaimAmtReimbursed: avgAmt,
+                DeductibleAmtPaid: avgAmt * 0.04,
+                AttendingPhysician: "PHY001",
+                OperatingPhysician: avgPhy >= 2 ? "PHY002" : null,
+                OtherPhysician: avgPhy >= 3 ? "PHY003" : null,
+                ClaimType: ipRatio >= 0.5 ? "Inpatient" : "Outpatient",
+                State: state,
+                County: "1",
+                Gender: "1", Race: "1", RenalDiseaseIndicator: "0",
+                NoOfMonths_PartACov: 12, NoOfMonths_PartBCov: 12,
+                IPAnnualReimbursementAmt: totalReimb * ipRatio,
+                IPAnnualDeductibleAmt: totalReimb * ipRatio * 0.03,
+                OPAnnualReimbursementAmt: totalReimb * (1 - ipRatio),
+                OPAnnualDeductibleAmt: totalReimb * (1 - ipRatio) * 0.04,
+                ChronicCond_Alzheimer: avgCC >= 2 ? 1 : 2,
+                ChronicCond_Heartfailure: avgCC >= 3 ? 1 : 2,
+                ChronicCond_KidneyDisease: avgCC >= 4 ? 1 : 2,
+                ChronicCond_Cancer: avgCC >= 5 ? 1 : 2,
+                ChronicCond_ObstrPulmonary: avgCC >= 6 ? 1 : 2,
+                ChronicCond_Depression: avgCC >= 7 ? 1 : 2,
+                ChronicCond_Diabetes: avgCC >= 8 ? 1 : 2,
+                ChronicCond_IschemicHeart: avgCC >= 9 ? 1 : 2,
+                ChronicCond_Osteoporasis: avgCC >= 10 ? 1 : 2,
+                ChronicCond_rheumatoidarthritis: avgCC >= 11 ? 1 : 2,
+                ChronicCond_stroke: 2,
+                ClmDiagnosisCode_1: "401.9",
+            };
+
+            try {
+                const res = await fetch(API_BASE + '/api/predict_provider', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(claim)
+                });
+                const data = await res.json();
+
+                document.getElementById('sim-result-card').style.display = 'block';
+                const score = parseFloat(data.fraud_score || 0);
+                document.getElementById('sim-score-display').innerText = (score * 100).toFixed(1) + '%';
+                document.getElementById('sim-score-display').style.color = riskColor(score);
+
+                const badge = document.getElementById('sim-badge-display');
+                badge.className = `badge badge-${(data.risk_tier || 'low').toLowerCase()}`;
+                badge.innerText = (data.risk_tier || 'Low') + ' Risk — Provider Level';
+
+                const bar = document.getElementById('sim-bar');
+                bar.style.width = (score * 100).toFixed(0) + '%';
+                bar.style.background = riskColor(score);
+
+                const headline = document.getElementById('sim-headline');
+                const desc = document.getElementById('sim-detail-desc');
+
+                if (score >= 0.70) {
+                    headline.innerText = '🔴 CRITICAL FRAUD RISK — Immediate Audit Recommended';
+                    desc.innerText = `This provider profile exhibits critical fraud signals: ${ghostRate > 0.05 ? 'post-death billing anomaly (ghost beneficiary), ' : ''}${avgPhy >= 3 ? 'physician stacking (3+ physicians per claim), ' : ''}abnormally high total reimbursement of $${totalReimb.toLocaleString()} across ${totalClaims} claims. Recommend immediate OIG referral.`;
+                } else if (score >= 0.50) {
+                    headline.innerText = '🟠 HIGH FRAUD RISK — Enhanced Monitoring';
+                    desc.innerText = `Provider billing patterns show elevated risk indicators including ${ghostRate > 0 ? `${(ghostRate * 100).toFixed(0)}% ghost billing rate, ` : ''}avg ${avgPhy.toFixed(1)} physicians per claim. Total reimbursement of $${totalReimb.toLocaleString()} across ${totalClaims} claims exceeds peer median benchmarks.`;
+                } else if (score >= 0.30) {
+                    headline.innerText = '🟡 MEDIUM FRAUD RISK — Requires Review';
+                    desc.innerText = `Provider shows moderately elevated billing complexity with avg ${avgCC} chronic conditions per claim. Reimbursement volume within an elevated range. Recommend periodic audit.`;
+                } else {
+                    headline.innerText = '🟢 LOW FRAUD RISK — Normal Billing Pattern';
+                    desc.innerText = `Provider billing patterns align with standard clinical practices. Reimbursement volume, physician count, and chronic burden are consistent with peer benchmarks for state: ${state}.`;
+                }
+
+                // Peer benchmark cards
+                const peerEl = document.getElementById('peer-benchmarks');
+                peerEl.innerHTML = `
+                    <div class="peer-card"><div class="peer-label">Claims / Beneficiary</div><div class="peer-val">${(totalClaims / Math.max(uniqueBenes, 1)).toFixed(1)}×</div><div class="peer-sub">claims per unique beneficiary</div></div>
+                    <div class="peer-card"><div class="peer-label">Avg Claim Value</div><div class="peer-val">$${avgAmt.toLocaleString('en-US', { maximumFractionDigits: 0 })}</div><div class="peer-sub">vs. peer median</div></div>
+                    <div class="peer-card"><div class="peer-label">Ghost Billing</div><div class="peer-val" style="color:${ghostRate > 0.05 ? '#F87171' : '#34D399'}">${(ghostRate * 100).toFixed(0)}%</div><div class="peer-sub">post-death claims rate</div></div>
+                    <div class="peer-card"><div class="peer-label">IP Claim Ratio</div><div class="peer-val">${(ipRatio * 100).toFixed(0)}%</div><div class="peer-sub">inpatient vs all claims</div></div>
+                `;
+            } catch (err) {
+                alert('Simulation error: ' + err.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

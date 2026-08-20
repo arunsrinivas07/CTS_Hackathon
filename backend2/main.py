@@ -1,0 +1,419 @@
+import os
+import sys
+import pickle
+import io
+import json
+import re
+import numpy as np
+import pandas as pd
+
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR    = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+try:
+    from backend2.train_xgboost_fraud_v2 import (
+        preprocess_claims, aggregate_to_provider,
+        BASE_PROVIDER_FEATURES, CC_RATE_COLS, PEER_FEATURE_COLS,
+        CAT_COLS, CHRONIC_COLS, FRAUD_THRESHOLD
+    )
+except ImportError:
+    from train_xgboost_fraud_v2 import (
+        preprocess_claims, aggregate_to_provider,
+        BASE_PROVIDER_FEATURES, CC_RATE_COLS, PEER_FEATURE_COLS,
+        CAT_COLS, CHRONIC_COLS, FRAUD_THRESHOLD
+    )
+
+MODEL_DIR       = os.path.join(CURRENT_DIR, "models", "xgboost_fraud_v2")
+PKL_PATH        = os.path.join(MODEL_DIR, "xgboost_fraud_model_v2.pkl")
+LEIE_PATH       = os.path.join(ROOT_DIR, "processed_data", "LEIE_MASTER.csv")
+CMS_PATH        = os.path.join(ROOT_DIR, "processed_data", "CMS_PROVIDER_MASTER.csv")
+SAMPLE_DIR      = os.path.join(ROOT_DIR, "sample_test_files")
+FRONTEND2_DIR   = os.path.join(ROOT_DIR, "frontend2")
+
+# ──────────────────────────────────────────────────────────────────────────────
+app = FastAPI(
+    title   = "CareGuard AI — Provider Intelligence Dashboard v2",
+    version = "2.0"
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], allow_credentials=True,
+    allow_methods=["*"], allow_headers=["*"],
+)
+
+plots_dir = os.path.join(MODEL_DIR, "model_plots")
+os.makedirs(plots_dir, exist_ok=True)
+app.mount("/plots", StaticFiles(directory=plots_dir), name="plots")
+
+sample_files_dir = os.path.join(CURRENT_DIR, "sample_files")
+os.makedirs(sample_files_dir, exist_ok=True)
+app.mount("/sample_files", StaticFiles(directory=sample_files_dir), name="sample_files")
+
+if os.path.exists(FRONTEND2_DIR):
+    app.mount("/static", StaticFiles(directory=FRONTEND2_DIR), name="static")
+
+model_artifacts  = None
+leie_risk_states = set()
+leie_active_df   = None    # DataFrame of active LEIE exclusions for Layer 1 direct checks
+peer_lookup      = None    # Pre-built CMS peer benchmark table (state-level means)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Startup — load model + LEIE + CMS peer table
+# ──────────────────────────────────────────────────────────────────────────────
+def load_pipeline_artifacts():
+    global model_artifacts, leie_risk_states, leie_active_df, peer_lookup
+
+    if os.path.exists(PKL_PATH):
+        with open(PKL_PATH, "rb") as f:
+            model_artifacts = pickle.load(f)
+        print(f"Loaded XGBoost v2 Model from {PKL_PATH}")
+    else:
+        print(f"WARNING: Model not found at {PKL_PATH}. Train it first with train_xgboost_fraud_v2.py")
+
+    if os.path.exists(LEIE_PATH):
+        try:
+            leie = pd.read_csv(LEIE_PATH, low_memory=False)
+            # Filter active exclusions (REINDATE is null or empty or 00000000)
+            reindate_str = leie["REINDATE"].astype(str).str.strip()
+            active_mask  = (
+                (leie["Record_Type"].astype(str).str.upper().str.contains("EXCL")) &
+                (leie["REINDATE"].isna() | reindate_str.isin(["", "nan", "0", "00000000"]))
+            )
+            leie_active_df = leie[active_mask].copy()
+            leie_risk_states = set(
+                leie_active_df["STATE"].dropna().astype(str).str.strip().str.upper().unique()
+            )
+            print(f"Loaded LEIE: {len(leie_active_df):,} active exclusions across {len(leie_risk_states)} states")
+        except Exception as e:
+            print(f"LEIE Notice: {e}")
+
+    # Load CMS peer benchmarks (state-level means from prebuilt CSV if present, else build from scratch)
+    peer_cache_path = os.path.join(MODEL_DIR, "cms_peer_benchmarks.csv")
+    if os.path.exists(peer_cache_path):
+        peer_lookup = pd.read_csv(peer_cache_path)
+        print(f"Loaded CMS peer benchmarks from cache: {peer_cache_path}")
+    elif os.path.exists(CMS_PATH):
+        try:
+            print("Building CMS peer benchmarks (first-time startup)...")
+            from train_xgboost_fraud_v2 import build_cms_peer_benchmarks, CMS_USECOLS
+            import logging
+            _lg = logging.getLogger("peer_startup")
+            _lg.addHandler(logging.StreamHandler(sys.stdout))
+            _lg.setLevel(logging.INFO)
+            chunks = []
+            for chunk in pd.read_csv(CMS_PATH, usecols=CMS_USECOLS,
+                                      low_memory=False, chunksize=500_000):
+                chunks.append(chunk)
+            cms_df = pd.concat(chunks, ignore_index=True)
+            from train_xgboost_fraud_v2 import build_cms_peer_benchmarks
+            peer_df = build_cms_peer_benchmarks(cms_df, _lg)
+            peer_lookup = peer_df.groupby("Rndrng_Prvdr_State_Abrvtn").mean(numeric_only=True).reset_index()
+            peer_lookup = peer_lookup.rename(columns={"Rndrng_Prvdr_State_Abrvtn": "primary_state"})
+            os.makedirs(MODEL_DIR, exist_ok=True)
+            peer_lookup.to_csv(peer_cache_path, index=False)
+            print(f"CMS peer benchmarks built and cached: {peer_cache_path}")
+        except Exception as e:
+            print(f"CMS peer benchmark build failed: {e}")
+            peer_lookup = pd.DataFrame()
+    else:
+        print(f"CMS Provider Master not found at {CMS_PATH}. Running without peer benchmarks.")
+        peer_lookup = pd.DataFrame()
+
+
+def check_leie_direct_exclusion(provider_id: str) -> dict:
+    """
+    Layer 1: Deterministic LEIE Compliance Gatekeeper.
+    Checks if a Provider NPI or Name is listed in active HHS OIG LEIE exclusions.
+    """
+    global leie_active_df
+    if leie_active_df is None or leie_active_df.empty:
+        return None
+
+    prov_clean = str(provider_id).strip()
+    if not prov_clean:
+        return None
+
+    # Check NPI numeric match
+    if prov_clean.isdigit():
+        npi_val = int(prov_clean)
+        if "NPI" in leie_active_df.columns:
+            matched = leie_active_df[leie_active_df["NPI"] == npi_val]
+            if not matched.empty:
+                row = matched.iloc[0]
+                return {
+                    "is_excluded": True,
+                    "reason": f"Active HHS OIG Exclusion Match (NPI: {prov_clean})",
+                    "excl_type": str(row.get("EXCLTYPE", "OIG_EXCLUSION")),
+                    "excl_date": str(row.get("EXCLDATE", "N/A"))
+                }
+
+    # Check Name match (BUSNAME / LASTNAME)
+    name_clean = prov_clean.upper()
+    if len(name_clean) > 2:
+        if "BUSNAME" in leie_active_df.columns and "LASTNAME" in leie_active_df.columns:
+            matched = leie_active_df[
+                (leie_active_df["BUSNAME"].astype(str).str.upper() == name_clean) |
+                (leie_active_df["LASTNAME"].astype(str).str.upper() == name_clean)
+            ]
+            if not matched.empty:
+                row = matched.iloc[0]
+                return {
+                    "is_excluded": True,
+                    "reason": f"Active HHS OIG Exclusion Match (Name: {name_clean})",
+                    "excl_type": str(row.get("EXCLTYPE", "OIG_EXCLUSION")),
+                    "excl_date": str(row.get("EXCLDATE", "N/A"))
+                }
+
+    return None
+
+
+@app.on_event("startup")
+def startup_event():
+    load_pipeline_artifacts()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Core inference: claim rows → provider row → model score
+# ──────────────────────────────────────────────────────────────────────────────
+def run_inference_on_df(raw_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Accept raw claim-level DataFrame (same schema as v1 PDF extraction).
+    Aggregate to provider level → join CMS peer → score with v2 model.
+    Returns provider-level DataFrame with fraud_score, risk_tier.
+    """
+    global model_artifacts, leie_risk_states, peer_lookup
+
+    if model_artifacts is None:
+        load_pipeline_artifacts()
+
+    if model_artifacts is None:
+        raise HTTPException(status_code=500, detail="v2 Model not found. Run train_xgboost_fraud_v2.py first.")
+
+    model        = model_artifacts["model"]
+    feature_cols = model_artifacts["feature_cols"]
+    encoders     = model_artifacts["encoders"]
+    medians      = model_artifacts["medians"]
+    threshold    = model_artifacts.get("threshold", FRAUD_THRESHOLD)
+
+    import logging
+    _lg = logging.getLogger("inference_v2")
+    _lg.setLevel(logging.WARNING)
+
+    # Aggregate claims to provider level
+    prov_df = aggregate_to_provider(raw_df, has_label=False, logger=_lg)
+
+    # Join CMS peer benchmarks if available
+    if peer_lookup is not None and len(peer_lookup) > 0:
+        from train_xgboost_fraud_v2 import join_cms_peer_features
+        prov_df = join_cms_peer_features(prov_df, peer_lookup, _lg)
+
+    # Ensure ALL feature_cols exist in prov_df (fill missing features with median)
+    for col in feature_cols:
+        if col not in prov_df.columns:
+            prov_df[col] = medians.get(col, 0.0)
+
+    # Encode categoricals
+    for col in CAT_COLS:
+        if col in prov_df.columns and col in encoders:
+            le    = encoders[col]
+            known = set(le.classes_)
+            prov_df[col] = prov_df[col].astype(str).apply(
+                lambda x: x if x in known else le.classes_[0]
+            )
+            prov_df[col] = le.transform(prov_df[col])
+
+    # Impute numerics
+    for col in feature_cols:
+        if col not in CAT_COLS:
+            prov_df[col] = prov_df[col].fillna(medians.get(col, 0.0))
+
+    X = prov_df[feature_cols].values
+    fraud_proba = model.predict_proba(X)[:, 1]
+    fraud_pred  = (fraud_proba >= threshold).astype(int)
+
+    out_df = prov_df.copy()
+    out_df["fraud_score"]     = fraud_proba.round(4)
+    out_df["fraud_predicted"] = fraud_pred
+    out_df["risk_tier"]       = pd.cut(
+        fraud_proba,
+        bins   = [0.00, 0.465, 0.485, 0.520, 1.00],
+        labels = ["Low", "Medium", "High", "Critical"],
+        right  = True,
+    ).astype(str)
+
+    # Layer 1 Compliance Check Override (Direct LEIE Match)
+    compliance_alerts = []
+    scoring_statuses = []
+
+    for idx, row in out_df.iterrows():
+        prov_id = str(row.get("Provider", ""))
+        leie_check = check_leie_direct_exclusion(prov_id)
+        if leie_check and leie_check.get("is_excluded"):
+            out_df.at[idx, "fraud_score"]     = 1.00
+            out_df.at[idx, "fraud_predicted"] = 1
+            out_df.at[idx, "risk_tier"]       = "Critical"
+            compliance_alerts.append(leie_check["reason"])
+            scoring_statuses.append("DIRECT_LEIE_EXCLUSION_MATCH")
+        else:
+            compliance_alerts.append("NO_DIRECT_EXCLUSION")
+            scoring_statuses.append("SCORED_BY_HYBRID_ML")
+
+    out_df["compliance_alert"]        = compliance_alerts
+    out_df["provider_scoring_status"] = scoring_statuses
+
+    return out_df
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# API Endpoints
+# ──────────────────────────────────────────────────────────────────────────────
+@app.get("/api/model_info")
+def get_model_info():
+    if model_artifacts is None:
+        raise HTTPException(status_code=500, detail="v2 Model not loaded")
+    return {
+        "model_version"  : model_artifacts.get("model_version", "v2_provider_level"),
+        "metrics"        : model_artifacts.get("metrics", {}),
+        "trained_at"     : model_artifacts.get("trained_at", "N/A"),
+        "threshold"      : model_artifacts.get("threshold", FRAUD_THRESHOLD),
+        "features_count" : len(model_artifacts.get("feature_cols", [])),
+        "leie_states_count": len(leie_risk_states),
+        "cms_peer_loaded": peer_lookup is not None and len(peer_lookup) > 0,
+    }
+
+
+@app.get("/sample_files/{filename}")
+def get_sample_file(filename: str):
+    path = os.path.join(SAMPLE_DIR, filename)
+    if os.path.exists(path):
+        media_type = "application/pdf" if filename.endswith(".pdf") else "text/plain"
+        return FileResponse(path, media_type=media_type, filename=filename)
+    raise HTTPException(status_code=404, detail="Sample file not found")
+
+
+@app.post("/api/predict_provider")
+def predict_single_provider(claim: dict):
+    """Score a single claim payload — aggregated to single provider row."""
+    df_raw = pd.DataFrame([claim])
+    scored = run_inference_on_df(df_raw)
+    row    = scored.iloc[0].to_dict()
+    return {
+        "provider_id"    : str(row.get("Provider", "UNKNOWN")),
+        "fraud_score"    : float(row["fraud_score"]),
+        "fraud_predicted": int(row["fraud_predicted"]),
+        "risk_tier"      : str(row["risk_tier"]),
+        "total_claims"   : int(row.get("total_claims", 1)),
+        "ghost_billing_rate"  : float(row.get("ghost_billing_rate", 0.0)),
+        "avg_physician_count" : float(row.get("avg_physician_count", 0.0)),
+        "avg_chronic_burden"  : float(row.get("avg_chronic_burden", 0.0)),
+        "charge_vs_peer_ratio": float(row.get("charge_vs_peer_ratio", 0.0)) if "charge_vs_peer_ratio" in row else None,
+    }
+
+
+@app.post("/api/predict_file")
+async def predict_file(file: UploadFile = File(...)):
+    """Upload a PDF, TXT, or CSV to score all claims at the provider level."""
+    contents = await file.read()
+    filename = file.filename.lower()
+
+    try:
+        if filename.endswith(".pdf"):
+            df_raw = extract_claims_from_pdf_bytes(contents)
+        elif filename.endswith(".txt"):
+            text_str = contents.decode("utf-8", errors="ignore")
+            claims_list = extract_multi_claims_from_text(text_str)
+            if claims_list:
+                df_raw = pd.DataFrame(claims_list)
+            else:
+                try:
+                    df_raw = pd.read_csv(io.StringIO(text_str))
+                except Exception:
+                    single = extract_claims_via_regex_fallback(text_str)
+                    df_raw = pd.DataFrame([single])
+        elif filename.endswith(".csv"):
+            text_str = contents.decode("utf-8", errors="ignore")
+            df_raw = pd.read_csv(io.StringIO(text_str))
+        else:
+            df_raw = pd.read_csv(io.BytesIO(contents))
+
+        if df_raw.empty:
+            raise HTTPException(status_code=400, detail="No claim data could be extracted from the file.")
+
+        # Save extracted JSON claims for debugging and verification
+        debug_json_path = os.path.join(ROOT_DIR, "extracted_claims_debug.json")
+        logs_dir = os.path.join(ROOT_DIR, "extracted_claims_logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        filename_clean = re.sub(r"[^\w\.-]", "_", file.filename)
+        history_json_path = os.path.join(logs_dir, f"extracted_{filename_clean}.json")
+
+        try:
+            records = json.loads(df_raw.to_json(orient="records", date_format="iso"))
+            # 1. Update latest debug file
+            with open(debug_json_path, "w", encoding="utf-8") as jf:
+                json.dump(records, jf, indent=2)
+                jf.flush()
+            # 2. Save historic log for this specific file
+            with open(history_json_path, "w", encoding="utf-8") as hf:
+                json.dump(records, hf, indent=2)
+                hf.flush()
+            print(f"Successfully saved {len(records)} extracted claims to {debug_json_path} and {history_json_path}")
+        except Exception as je:
+            print(f"Notice: Could not save extracted_claims_debug.json ({je})")
+
+        scored_df = run_inference_on_df(df_raw)
+
+        results = []
+        for _, row in scored_df.iterrows():
+            r = {}
+            for k, v in row.items():
+                try:
+                    if isinstance(v, float) and (np.isnan(v) or np.isinf(v)):
+                        r[k] = None
+                    elif isinstance(v, (np.integer,)):
+                        r[k] = int(v)
+                    elif isinstance(v, (np.floating,)):
+                        r[k] = round(float(v), 4)
+                    else:
+                        r[k] = v
+                except Exception:
+                    r[k] = str(v)
+            results.append(r)
+
+        tier_counts = scored_df["risk_tier"].value_counts().to_dict()
+
+        return {
+            "filename"        : file.filename,
+            "total_providers" : len(scored_df),
+            "tier_counts"     : tier_counts,
+            "providers"       : results,
+            "model_version"   : "v2_provider_level",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse or score file: {str(e)}")
+
+
+@app.get("/", response_class=HTMLResponse)
+def get_dashboard():
+    index_path = os.path.join(FRONTEND2_DIR, "index.html")
+    if os.path.exists(index_path):
+        with open(index_path, "r", encoding="utf-8") as f:
+            return f.read()
+    raise HTTPException(status_code=404, detail="Frontend2 index.html not found")
+
+
+if __name__ == "__main__":
+    uvicorn.run("backend2.main:app", host="127.0.0.1", port=8002, reload=True)
