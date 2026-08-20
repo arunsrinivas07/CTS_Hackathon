@@ -1,7 +1,8 @@
 """
 CTS Hackathon — Healthcare Anomaly Detection API
 ==================================================
-POST /api/v1/predict
+POST /api/v1/predict         — Claim-level scoring (Model B or C)
+POST /api/v1/predict_hybrid  — Hybrid scoring: Model B + XGBoost v2 blended score
 
 Accepts raw medical claim or PDE transaction fields.
 Internally builds all required features, scores with the appropriate
@@ -11,6 +12,7 @@ Models used
 -----------
   MEDICAL_CLAIM → Model B (IsolationForest, 59 features)
   PDE           → Model C (IsolationForest, 32 features)
+  HYBRID        → Model B + XGBoost v2 CMS Peer-Aware Adaptive Engine
 
 Run:
     uvicorn backend.main:app --reload --port 8000
@@ -487,4 +489,113 @@ async def health():
         "model_b":  _meta_b.get("trained_at"),
         "model_c":  _meta_c.get("trained_at"),
         "leie_npis": len(get_leie_index()),
+    }
+
+
+# ── hybrid endpoint ────────────────────────────────────────────────────────────
+
+@app.post("/api/v1/predict_hybrid")
+async def predict_hybrid(payload: dict):
+    """
+    Hybrid Payment Integrity Score — Model B + XGBoost v2 combined.
+
+    Accepts the same MEDICAL_CLAIM fields as /api/v1/predict.
+    Runs two models in parallel and returns a weighted blend:
+
+        final_risk_score = 0.40 × claim_score (Model B)
+                         + 0.60 × provider_score (XGBoost v2)
+
+    Layer 0: If the provider NPI matches an active LEIE exclusion,
+             final_risk_score is overridden to 1.0 (Critical).
+
+    Example request body:
+    {
+      "transaction_type": "MEDICAL_CLAIM",
+      "claim_id": "CLM-001",
+      "bene_id": "BENE-123",
+      "provider_id": "1234567890",
+      "claim_type": "inpatient",
+      "claim_start_date": "2009-01-15",
+      "claim_end_date": "2009-01-20",
+      "clm_pmt_amt": 12500.00,
+      "clm_tot_chrg_amt": 38000.00,
+      "line_count": 10,
+      "diag_count": 5,
+      "proc_count": 4
+    }
+    """
+    from backend.hybrid_engine import score_hybrid
+
+    txn_type = str(payload.get("transaction_type", "")).upper()
+    if txn_type not in ("MEDICAL_CLAIM", ""):
+        raise HTTPException(
+            status_code=422,
+            detail="/predict_hybrid only supports MEDICAL_CLAIM transactions. Use /predict for PDE."
+        )
+
+    try:
+        result = score_hybrid(payload)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Hybrid scoring failed: {exc}")
+
+    # Build a human-readable explanation
+    tier = result["final_risk_tier"]
+    if result["leie_override"]:
+        explanation = (
+            "CRITICAL: Provider is listed on the HHS OIG LEIE active exclusion list. "
+            "Payment must be blocked immediately. Score overridden to 1.0."
+        )
+    elif tier == "Critical":
+        explanation = (
+            f"CRITICAL risk detected. Claim anomaly score: {result['claim_score']:.2%}, "
+            f"Provider behavioral fraud probability: {result['provider_score']:.2%}. "
+            "Both models indicate high-confidence fraud patterns. Immediate review required."
+        )
+    elif tier == "High":
+        explanation = (
+            f"HIGH risk. Claim score: {result['claim_score']:.2%}, "
+            f"Provider score: {result['provider_score']:.2%}. "
+            "Significant anomaly detected. Prioritise for investigation."
+        )
+    elif tier == "Medium":
+        explanation = (
+            f"MEDIUM risk. Claim score: {result['claim_score']:.2%}, "
+            f"Provider score: {result['provider_score']:.2%}. "
+            "Some anomaly indicators present. Monitor and review if pattern persists."
+        )
+    else:
+        explanation = (
+            f"LOW risk. Claim score: {result['claim_score']:.2%}, "
+            f"Provider score: {result['provider_score']:.2%}. "
+            "Both models indicate typical behaviour. No immediate action required."
+        )
+
+    return {
+        "transaction_type":   str(payload.get("transaction_type", "MEDICAL_CLAIM")),
+        "transaction_id":     str(payload.get("claim_id", "UNKNOWN")),
+        "bene_id":            str(payload.get("bene_id", "")),
+        "provider_id":        str(payload.get("provider_id") or payload.get("at_physn_npi") or ""),
+        # ── Individual model scores ──────────────────────────────────────────
+        "claim_score":        result["claim_score"],
+        "effective_claim_score": result.get("effective_claim_score", result["claim_score"]),
+        "claim_score_label":  "Model B — IsolationForest (claim-level anomaly)",
+        "provider_score":     result["provider_score"],
+        "provider_score_label": "Model V2 — XGBoost (provider behavioral fraud)",
+        # ── Hybrid blended score ─────────────────────────────────────────────
+        "final_risk_score":   result["final_risk_score"],
+        "final_risk_tier":    result["final_risk_tier"],
+        "model_weights":      result["model_weights"],
+        # ── LEIE ─────────────────────────────────────────────────────────────
+        "leie_override":      result["leie_override"],
+        "leie_details":       result["leie_details"],
+        # ── Explainability ───────────────────────────────────────────────────
+        "claim_evidence":     result["claim_evidence"],
+        "provider_evidence":  result["provider_evidence"],
+        # ── Meta ─────────────────────────────────────────────────────────────
+        "explanation":        explanation,
+        "disclaimer":         (
+            "Risk scores represent statistical anomaly indicators. "
+            "They are NOT proof of fraud. All findings require human review."
+        ),
+        "scored_at":          result["scored_at"],
     }
