@@ -517,6 +517,17 @@ def build_cms_peer_benchmarks(cms_df: pd.DataFrame, logger) -> pd.DataFrame:
     return peer
 
 
+SSA_STATE_MAP = {
+    "1": "AL", "2": "AK", "3": "AZ", "4": "AR", "5": "CA", "6": "CO", "7": "CT", "8": "DE", "9": "DC",
+    "10": "FL", "11": "GA", "12": "HI", "13": "ID", "14": "IL", "15": "IN", "16": "IA", "17": "KS",
+    "18": "KY", "19": "LA", "20": "ME", "21": "MD", "22": "MA", "23": "MI", "24": "MN", "25": "MS",
+    "26": "MO", "27": "MT", "28": "NE", "29": "NV", "30": "NH", "31": "NJ", "32": "NM", "33": "NY",
+    "34": "NC", "35": "ND", "36": "OH", "37": "OK", "38": "OR", "39": "PA", "40": "PR", "41": "RI",
+    "42": "SC", "43": "SD", "44": "TN", "45": "TX", "46": "UT", "47": "VT", "48": "VI", "49": "VA",
+    "50": "WA", "51": "WV", "52": "WI", "53": "WY", "54": "AK"
+}
+
+
 def join_cms_peer_features(prov_df: pd.DataFrame, peer_df: pd.DataFrame,
                              logger) -> pd.DataFrame:
     """
@@ -557,9 +568,10 @@ def join_cms_peer_features(prov_df: pd.DataFrame, peer_df: pd.DataFrame,
     peer_by_state = peer_specialty.groupby(state_col).mean(numeric_only=True).reset_index()
     peer_by_state = peer_by_state.rename(columns={state_col: "primary_state"})
 
-    # Both sides cast to str — unmatched rows get NaN, imputed later
-    prov_df["primary_state"]       = prov_df["primary_state"].astype(str)
-    peer_by_state["primary_state"] = peer_by_state["primary_state"].astype(str)
+    # Normalize state codes — map Kaggle numeric SSA/FIPS state codes (e.g. "33", "10", "45") to 2-letter state abbreviations ("NY", "FL", "TX")
+    prov_df["primary_state"] = prov_df["primary_state"].astype(str).str.replace(r"\.0$", "", regex=True).str.strip()
+    prov_df["primary_state"] = prov_df["primary_state"].map(lambda s: SSA_STATE_MAP.get(s, s))
+    peer_by_state["primary_state"] = peer_by_state["primary_state"].astype(str).str.strip()
 
     prov_df = prov_df.merge(peer_by_state, on="primary_state", how="left")
 
