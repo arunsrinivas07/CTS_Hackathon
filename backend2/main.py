@@ -356,20 +356,64 @@ def get_sample_file(filename: str):
 
 @app.post("/api/predict_provider")
 def predict_single_provider(claim: dict):
-    """Score a single claim payload — aggregated to single provider row."""
+    """Score a single claim payload — aggregated to a single provider row."""
     df_raw = pd.DataFrame([claim])
     scored = run_inference_on_df(df_raw)
     row    = scored.iloc[0].to_dict()
+    s = row.get("fraud_score")
     return {
         "provider_id"    : str(row.get("Provider", "UNKNOWN")),
-        "fraud_score"    : float(row["fraud_score"]),
+        "fraud_score"    : round(float(s), 4) if s is not None and not (isinstance(s, float) and np.isnan(s)) else None,
         "fraud_predicted": int(row["fraud_predicted"]),
         "risk_tier"      : str(row["risk_tier"]),
         "total_claims"   : int(row.get("total_claims", 1)),
-        "ghost_billing_rate"  : float(row.get("ghost_billing_rate", 0.0)),
-        "avg_physician_count" : float(row.get("avg_physician_count", 0.0)),
-        "avg_chronic_burden"  : float(row.get("avg_chronic_burden", 0.0)),
-        "charge_vs_peer_ratio": float(row.get("charge_vs_peer_ratio", 0.0)) if "charge_vs_peer_ratio" in row else None,
+        "compliance_alert"       : str(row.get("compliance_alert", "")),
+        "provider_scoring_status": str(row.get("provider_scoring_status", "")),
+        "ghost_billing_rate"     : float(row.get("ghost_billing_rate", 0.0)),
+        "avg_physician_count"    : float(row.get("avg_physician_count", 0.0)),
+        "avg_chronic_burden"     : float(row.get("avg_chronic_burden", 0.0)),
+        "charge_vs_peer_ratio"   : float(row["charge_vs_peer_ratio"]) if "charge_vs_peer_ratio" in row and row["charge_vs_peer_ratio"] is not None else None,
+    }
+
+
+@app.post("/api/predict_batch")
+def predict_batch(claims: list):
+    """
+    Score multiple claims for one or more providers.
+    Accepts a JSON array of claim dicts. Claims with the same Provider ID are
+    aggregated as a single provider profile before scoring.
+
+    This is the endpoint to use when testing via Swagger UI with multi-claim JSON arrays.
+    Minimum 5 claims per provider recommended for full provider-level ML profiling.
+    """
+    if not claims:
+        raise HTTPException(status_code=400, detail="No claims provided.")
+
+    df_raw = pd.DataFrame(claims)
+    scored = run_inference_on_df(df_raw)
+
+    results = []
+    for _, row in scored.iterrows():
+        s = row.get("fraud_score")
+        cv = row.get("charge_vs_peer_ratio")
+        results.append({
+            "provider_id"    : str(row.get("Provider", "UNKNOWN")),
+            "fraud_score"    : round(float(s), 4) if s is not None and not (isinstance(s, float) and np.isnan(s)) else None,
+            "fraud_predicted": int(row["fraud_predicted"]),
+            "risk_tier"      : str(row["risk_tier"]),
+            "total_claims"   : int(row.get("total_claims", 1)),
+            "compliance_alert"       : str(row.get("compliance_alert", "")),
+            "provider_scoring_status": str(row.get("provider_scoring_status", "")),
+            "ghost_billing_rate"     : float(row.get("ghost_billing_rate", 0.0)),
+            "avg_physician_count"    : float(row.get("avg_physician_count", 0.0)),
+            "avg_chronic_burden"     : float(row.get("avg_chronic_burden", 0.0)),
+            "charge_vs_peer_ratio"   : round(float(cv), 4) if cv is not None and not (isinstance(cv, float) and np.isnan(cv)) else None,
+        })
+
+    return {
+        "total_claims_submitted": len(claims),
+        "total_providers_scored": len(results),
+        "providers": results,
     }
 
 
