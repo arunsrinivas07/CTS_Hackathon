@@ -1,0 +1,44 @@
+{
+  "document_id": "CMS-LCD-L35490",
+  "document_title": "Local Coverage Determination (LCD): Magnetic Resonance Imaging (MRI) of the Lumbar Spine",
+  "document_type": "Local Coverage Determination (LCD)",
+  "organization": "Centers for Medicare & Medicaid Services (CMS) / Medicare Administrative Contractor (MAC)",
+  "source": "CMS / Noridian Medicare Part B (LCD L35490)",
+  "url": "https://www.cms.gov/medicare-coverage-database/view/lcd.aspx?lcdid=35490",
+  "effective_date": "2023-10-01",
+  "publication_date": "2025-01-15",
+  "jurisdiction": "Multi-Jurisdiction Medicare Part B (Jurisdictions E, F, J, M)",
+  "procedure": "MRI - Lumbar Spine (CPT 72148, 72149, 72158)",
+  "policy_type": "Medical Necessity and Coverage Guidelines",
+  "source_type": "official_verified",
+  "verification_status": "verified",
+  "lcd_id": "L35490",
+  "mac_contractor": "Noridian Medicare Part B",
+  "version_status": "current",
+  "sections": [
+    {
+      "section_name": "Coverage Indications, Limitations, and Medical Necessity",
+      "section_number": "Section 1",
+      "page": 2,
+      "text": "Magnetic Resonance Imaging (MRI) of the lumbar spine (CPT 72148, 72149, 72158) is considered medically reasonable and necessary only when specific clinical criteria are documented in the medical record. For uncomplicated lower back pain (ICD-10 M54.5, M54.50, M54.59) without neurological deficit or red flags, initial conservative management is required. Medicare coverage requires at least 4 to 6 weeks of active, documented conservative medical therapy (including physical therapy, supervised exercise, prescription non-steroidal anti-inflammatory drugs, or chiropractic care) before advanced lumbar imaging is covered. Claims for lumbar MRI performed without prior conservative therapy trial or documented red-flag conditions are not medically necessary and are subject to claim denial."
+    },
+    {
+      "section_name": "Exceptions to Conservative Therapy / Red Flags",
+      "section_number": "Section 2",
+      "page": 4,
+      "text": "The prerequisite trial of 4 to 6 weeks of conservative therapy is waived and immediate lumbar spine MRI is indicated only when the patient exhibits verified red-flag clinical conditions documented in the clinical examination. Red flags include: 1) Cauda equina syndrome with bowel/bladder dysfunction or saddle anesthesia; 2) Significant or rapidly progressive motor neurological deficit (e.g. acute foot drop, severe progressive lower extremity motor weakness); 3) Known history of active cancer/malignancy with new onset back pain suspicious for bone metastases; 4) Clinical signs of spinal infection or vertebral osteomyelitis (fever, elevated inflammatory markers, IV drug use); 5) Acute severe spinal trauma with suspected fracture. In the absence of documented red flags, billing for immediate MRI upon initial consultation constitutes non-covered overutilization."
+    },
+    {
+      "section_name": "Repeat Imaging and Utilization Frequency Limitations",
+      "section_number": "Section 3",
+      "page": 6,
+      "text": "Repeat lumbar MRI scans (with or without contrast) performed within 30 to 60 days of an initial scan are considered redundant and not medically necessary unless there is documented clinical evidence of a new neurological injury, significant worsening of neurological signs, or immediate pre-operative planning following failed conservative therapy. Contrast-enhanced MRI (CPT 72149 or 72158) is not routinely indicated for uncomplicated mechanical lower back pain and is restricted to cases of suspected infection, neoplasm, or prior lumbar surgery within the past 12 months with suspected epidural fibrosis versus recurrent disc herniation."
+    },
+    {
+      "section_name": "Medical Record Documentation Requirements",
+      "section_number": "Section 4",
+      "page": 8,
+      "text": "The treating physician's clinical notes must clearly document: 1) Detailed history and physical examination findings including specific motor, sensory, and reflex neurological testing; 2) Duration, severity, and response to specific conservative therapies attempted; 3) Rationale for imaging and how MRI findings will alter the management or surgical treatment plan; 4) Exact CPT code (72148 without contrast, 72149 with contrast, 72158 without and with contrast). Failure to maintain complete contemporaneous clinical documentation substantiating medical necessity may result in post-payment recovery and audit referral under Medicare Program Integrity guidelines."
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "document_id": "CMS-IOM-100-04-CH13",
+  "document_title": "Medicare Claims Processing Manual: Chapter 13 - Radiology Services and Other Diagnostic Procedures",
+  "document_type": "CMS Internet-Only Manual (IOM)",
+  "organization": "Centers for Medicare & Medicaid Services (CMS)",
+  "source": "CMS Pub. 100-04, Medicare Claims Processing Manual, Chapter 13",
+  "url": "https://www.cms.gov/regulations-and-guidance/guidance/manuals/downloads/clm104c13.pdf",
+  "effective_date": "2025-01-01",
+  "publication_date": "2025-01-10",
+  "jurisdiction": "National",
+  "procedure": "Radiology Services / Diagnostic Imaging (CPT 70010 - 79999)",
+  "policy_type": "Claims Processing and Billing Guidance",
+  "source_type": "official_verified",
+  "verification_status": "verified",
+  "sections": [
+    {
+      "section_name": "Billing for Multiple and Repeat Imaging Procedures",
+      "section_number": "Section 20.1",
+      "page": 12,
+      "text": "When diagnostic imaging procedures are performed on the same date of service or during the same clinical episode, specific billing rules apply. If a repeat diagnostic procedure is performed by the same physician on the same patient on the same day, modifier 76 (Repeat Procedure by Same Physician) must be appended, accompanied by medical record justification indicating why a second scan was clinically required. Unbundling of multiple diagnostic imaging components or billing separate charges for global imaging and component technical/professional services on the same claim is prohibited under the National Correct Coding Initiative (NCCI)."
+    },
+    {
+      "section_name": "Global vs. Split Billing (Technical Component and Professional Component)",
+      "section_number": "Section 40.2",
+      "page": 24,
+      "text": "Diagnostic imaging services comprise two distinct components: the Technical Component (modifier TC), representing the equipment, facility, and technician costs; and the Professional Component (modifier 26), representing the physician's interpretation and written report. When a single provider or clinic performs both the scan and the interpretation, the global procedure code is billed without modifiers. Billing both global fee and separate TC/26 splits constitutes duplicate billing fraud."
+    },
+    {
+      "section_name": "Appropriate Use Criteria and Prior Consultation Verification",
+      "section_number": "Section 50.4",
+      "page": 38,
+      "text": "Advanced diagnostic imaging services (such as magnetic resonance imaging, computed tomography, and nuclear medicine) are subject to Appropriate Use Criteria (AUC) requirements. Claims submitted for advanced imaging must demonstrate that the ordering physician consulted clinical decision support guidelines prior to service delivery, confirming that the requested exam represents appropriate clinical utilization for the patient's presenting symptoms."
+    }
+  ]
+}

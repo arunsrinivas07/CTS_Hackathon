@@ -1,0 +1,35 @@
+{
+  "document_id": "CMS-IOM-100-08-CH3",
+  "document_title": "Medicare Program Integrity Manual: Chapter 3 - Verifying Potential Fraud, Waste, and Abuse in Diagnostic Claims",
+  "document_type": "CMS Internet-Only Manual (IOM)",
+  "organization": "Centers for Medicare & Medicaid Services (CMS)",
+  "source": "CMS Pub. 100-08, Medicare Program Integrity Manual, Chapter 3",
+  "url": "https://www.cms.gov/regulations-and-guidance/guidance/manuals/downloads/pim83c03.pdf",
+  "effective_date": "2025-01-01",
+  "publication_date": "2025-01-20",
+  "jurisdiction": "National (Unified Program Integrity Contractors - UPIC / SMRC)",
+  "procedure": "High-Utilization Outpatient Diagnostic Services",
+  "policy_type": "Program Integrity and Fraud Investigation Guidelines",
+  "source_type": "official_verified",
+  "verification_status": "verified",
+  "sections": [
+    {
+      "section_name": "Identification of Aberrant Utilization and Peer Group Outliers",
+      "section_number": "Section 3.1",
+      "page": 5,
+      "text": "Unified Program Integrity Contractors (UPICs) and Special Investigation Units (SIUs) utilize statistical peer group comparative data to identify aberrant billing patterns. Providers whose billing frequency for high-cost diagnostic procedures (such as Lumbar MRI CPT 72148) exceeds the 95th percentile of regional or specialty peers are prioritized for complex medical review. Statistical aberrancy in procedure volume, high ratio of advanced imaging to initial evaluation encounters, or abnormal repeat-imaging rates serve as key triggers for targeted audit."
+    },
+    {
+      "section_name": "Medical Review Standards for Medical Necessity Verification",
+      "section_number": "Section 3.4",
+      "page": 16,
+      "text": "Medical review of high-utilization imaging providers requires examining medical records for contemporaneous documentation establishing clinical necessity. Key audit questions include: 1) Did the medical record establish at least 4 to 6 weeks of conservative therapy prior to non-emergent MRI? 2) Was a valid clinical reason documented if immediate imaging was ordered? 3) Are imaging results correlated with the patient's physical examination and treatment progress? Claims lacking verifiable physical therapy notes, medication trials, or documentation of neurological deficits are determined to be not medically necessary."
+    },
+    {
+      "section_name": "Indicators of Potential Fraud in Diagnostic Radiology",
+      "section_number": "Section 3.8",
+      "page": 28,
+      "text": "Common fraud indicators in outpatient radiology include: 1) Performing routine MRI on virtually all patients presenting with lower back pain without prior conservative treatment; 2) Performing rapid repeat MRI scans within 30 days without clinical justification; 3) Upcoding or unbundling MRI components (billing both with and without contrast when without contrast was indicated); 4) Systematic failure to maintain detailed clinical records justifying high-volume imaging orders."
+    }
+  ]
+}

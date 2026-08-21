@@ -1,0 +1,35 @@
+{
+  "document_id": "CMS-NCD-220.2",
+  "document_title": "National Coverage Determination (NCD) for Magnetic Resonance Imaging (220.2)",
+  "document_type": "National Coverage Determination (NCD)",
+  "organization": "Centers for Medicare & Medicaid Services (CMS)",
+  "source": "CMS Medicare National Coverage Determinations Manual (Pub. 100-03, Section 220.2)",
+  "url": "https://www.cms.gov/medicare-coverage-database/view/ncd.aspx?ncdid=177",
+  "effective_date": "2024-01-01",
+  "publication_date": "2025-02-01",
+  "jurisdiction": "National (All Medicare Administrative Contractor Jurisdictions)",
+  "procedure": "Magnetic Resonance Imaging (MRI) - General Coverage",
+  "policy_type": "National Coverage Policy",
+  "source_type": "official_verified",
+  "verification_status": "verified",
+  "sections": [
+    {
+      "section_name": "General Principles of Diagnostic MRI Coverage",
+      "section_number": "Section 220.2.A",
+      "page": 1,
+      "text": "Under Section 1862(a)(1)(A) of the Social Security Act, Medicare Part B covers diagnostic Magnetic Resonance Imaging (MRI) when used to diagnose disease or injury when the diagnostic information needed cannot be obtained adequately by less invasive or less costly diagnostic methods such as standard radiography or clinical examination. MRI is covered only when performed upon the direct prescription or order of the physician responsible for treating the patient's condition and when the results will directly guide subsequent clinical management."
+    },
+    {
+      "section_name": "Non-Covered Indications and Diagnostic Overutilization",
+      "section_number": "Section 220.2.B",
+      "page": 3,
+      "text": "MRI is non-covered when performed for screening purposes in asymptomatic individuals, or when used routinely as an initial diagnostic tool before standard clinical evaluation and conservative management steps have been executed. Routine screening examinations, investigational imaging protocols, or redundant duplicate scans performed within an acute episode without clinical progression do not meet statutory reasonable and necessary criteria and cannot be billed to Medicare."
+    },
+    {
+      "section_name": "Documentation and Ordering Compliance",
+      "section_number": "Section 220.2.C",
+      "page": 5,
+      "text": "All diagnostic imaging claims submitted to Medicare must be accompanied by an authenticated written order from the ordering practitioner containing the specific clinical indication, patient history, and reason for the diagnostic imaging. Claims billed without a documented physician order, or with boiler-plate diagnostic justifications lacking individual patient specificity, are subject to mandatory post-payment clawback and program integrity review."
+    }
+  ]
+}
