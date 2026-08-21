@@ -7,7 +7,8 @@ import re
 import numpy as np
 import pandas as pd
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from typing import List, Dict, Any
+from fastapi import FastAPI, UploadFile, File, HTTPException, Body
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -377,7 +378,21 @@ def predict_single_provider(claim: dict):
 
 
 @app.post("/api/predict_batch")
-def predict_batch(claims: list):
+def predict_batch(
+    claims: List[Dict[str, Any]] = Body(
+        ...,
+        description="Array of claim JSON objects. Multiple claims with the same Provider ID will be aggregated together.",
+        example=[
+            {
+                "BeneID": "BENE16640", "ClaimID": "CLM72529",
+                "ClaimStartDt": "2009-10-19", "ClaimEndDt": "2009-10-20",
+                "Provider": "PRV57494", "InscClaimAmtReimbursed": 13000,
+                "AttendingPhysician": "PHY378358", "OperatingPhysician": "PHY347733",
+                "State": 52, "ClaimType": "Inpatient"
+            }
+        ]
+    )
+):
     """
     Score multiple claims for one or more providers.
     Accepts a JSON array of claim dicts. Claims with the same Provider ID are
