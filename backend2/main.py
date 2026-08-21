@@ -268,7 +268,7 @@ def run_inference_on_df(raw_df: pd.DataFrame) -> pd.DataFrame:
         right  = True,
     ).astype(str)
 
-    # Layer 1 Compliance Check Override & Low-Volume Claim Safeguards
+    # Layer 1 Compliance Check Override, Human Review Flags & Low-Volume Claim Safeguards
     compliance_alerts = []
     scoring_statuses = []
 
@@ -276,27 +276,47 @@ def run_inference_on_df(raw_df: pd.DataFrame) -> pd.DataFrame:
         prov_id = str(row.get("Provider", ""))
         tot_claims = int(row.get("total_claims", 1))
         ghost_rate = float(row.get("ghost_billing_rate", 0.0))
+        reimb = float(row.get("avg_claim_reimbursed", 0.0))
+        peer_ratio = float(row.get("charge_vs_peer_ratio", 0.0)) if ("charge_vs_peer_ratio" in row and row["charge_vs_peer_ratio"] is not None) else 0.0
+        diag_density = float(row.get("avg_diagnosis_density", 0.0))
+        proc_density = float(row.get("avg_procedure_density", 0.0))
         leie_check = check_leie_direct_exclusion(prov_id)
 
-        # 1. Direct LEIE Exclusion Override
+        # 1. Direct LEIE Exclusion Override (Deterministic Layer 1 Compliance Gatekeeper)
         if leie_check and leie_check.get("is_excluded"):
             out_df.at[idx, "fraud_score"]     = 1.00
             out_df.at[idx, "fraud_predicted"] = 1
             out_df.at[idx, "risk_tier"]       = "Critical"
             compliance_alerts.append(leie_check["reason"])
             scoring_statuses.append("DIRECT_LEIE_EXCLUSION_MATCH")
-        # 2. Ghost Billing Post-Death Override
+
+        # 2. Post-Death Service Date Check (Human-in-the-Loop Review Flag)
         elif ghost_rate > 0:
-            out_df.at[idx, "fraud_score"]     = 1.00
-            out_df.at[idx, "fraud_predicted"] = 1
-            out_df.at[idx, "risk_tier"]       = "Critical"
-            compliance_alerts.append("CRITICAL: Ghost Billing (Post-Death Service Date Detected)")
-            scoring_statuses.append("GHOST_BILLING_OVERRIDE")
-        # 3. Single Claim / Low-Volume History Safeguard (n < 5)
+            current_tier = str(out_df.at[idx, "risk_tier"])
+            if current_tier in ("Low", "Medium"):
+                out_df.at[idx, "risk_tier"] = "High (Pending Review)"
+            compliance_alerts.append("FLAG_FOR_HUMAN_REVIEW: Post-death service date detected (ClaimStartDt > DOD)")
+            scoring_statuses.append("FLAGGED_FOR_HUMAN_REVIEW")
+
+        # 3. Single Claim / Low-Volume History Safeguard (n < MIN_CLAIMS_FOR_PROVIDER_ML)
         elif tot_claims < MIN_CLAIMS_FOR_PROVIDER_ML:
-            compliance_alerts.append(f"Notice: Single/Low-Volume Claim (n={tot_claims}). Provider ML profiling requires >= {MIN_CLAIMS_FOR_PROVIDER_ML} claims history.")
+            # Single-claim rule & anomaly check (extreme reimbursement, peer upcoding, procedure density)
+            is_anomaly = (reimb > 25000) or (peer_ratio > 3.0) or (diag_density > 8) or (proc_density > 5)
+            
+            # Explicitly clear ML fraud_score to prevent misleading numerical display on low volume
+            out_df.at[idx, "fraud_score"]     = None
+            out_df.at[idx, "fraud_predicted"] = 1 if is_anomaly else 0
+
+            if is_anomaly:
+                out_df.at[idx, "risk_tier"] = "Single Claim (Anomaly Flagged)"
+                compliance_alerts.append(f"Notice: Single-claim anomaly detected (Reimb: ${reimb:,.2f}, Peer Ratio: {peer_ratio:.2f}). Minimum {MIN_CLAIMS_FOR_PROVIDER_ML} claims required for full provider ML.")
+            else:
+                out_df.at[idx, "risk_tier"] = "Unrated (Insufficient History)"
+                compliance_alerts.append(f"Notice: Low claim volume (n={tot_claims}). Minimum {MIN_CLAIMS_FOR_PROVIDER_ML} claims required for full provider ML profiling.")
+
             scoring_statuses.append("INSUFFICIENT_HISTORY_FOR_PROVIDER_ML")
-        # 4. Full Provider ML Behavioral Profiling (n >= 5)
+
+        # 4. Full Provider ML Behavioral Profiling (n >= MIN_CLAIMS_FOR_PROVIDER_ML)
         else:
             compliance_alerts.append("NO_DIRECT_EXCLUSION")
             scoring_statuses.append("SCORED_BY_HYBRID_ML")

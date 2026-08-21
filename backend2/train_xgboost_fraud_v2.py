@@ -76,9 +76,9 @@ TEST_SIZE       = 0.20
 
 # Shared constants — NEVER redefine locally; always import from config.py
 try:
-    from backend2.config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS
+    from backend2.config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS, MIN_CLAIMS_FOR_PROVIDER_ML
 except ImportError:
-    from config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS
+    from config import FRAUD_THRESHOLD, TIER_BINS, TIER_LABELS, MIN_CLAIMS_FOR_PROVIDER_ML
 
 # CMS columns to read — all high-value fraud signals across 82 available columns
 CMS_USECOLS = [

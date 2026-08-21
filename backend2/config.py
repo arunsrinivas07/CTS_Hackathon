@@ -18,10 +18,17 @@ TIER_LABELS = ["Low", "Medium", "High", "Critical"]
 TIER_COLORS = {"Low": "#4CAF50", "Medium": "#FFC107", "High": "#FF5722", "Critical": "#B71C1C"}
 
 # ── Minimum Provider Claims Threshold for ML Behavioral Profiling ────────────
+# Statistically derived from KAGGLE_MASTER_TRAIN provider claim count distribution:
+#   - 5th percentile:  2 claims
+#   - 10th percentile: 3 claims
+#   - 15th percentile: 5 claims  <-- MIN_CLAIMS_FOR_PROVIDER_ML threshold
+#   - 25th percentile: 10 claims
+#   - Median (50th):   31 claims
+#
 # Provider behavioral profiling requires sufficient claim history (n >= 5) to compute
 # honest rate and variance metrics (e.g. std_claim_reimbursed, ghost_billing_rate).
-# Payloads with fewer than 5 claims use LEIE Direct Exclusion + Rule-Based scoring
-# with an explicit INSUFFICIENT_HISTORY_FOR_PROVIDER_ML status notice.
+# Payloads with fewer than 5 claims use LEIE Direct Exclusion + Single-Claim Anomaly
+# checks with an explicit INSUFFICIENT_HISTORY_FOR_PROVIDER_ML status notice.
 MIN_CLAIMS_FOR_PROVIDER_ML = 5
 
 # ── Model Decision Threshold ───────────────────────────────────────────────────
