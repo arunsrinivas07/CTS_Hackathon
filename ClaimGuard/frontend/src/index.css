@@ -1,0 +1,540 @@
+@import "tailwindcss";
+
+/*
+  ClaimGuard AI — Burgundy & Brown Design System
+  Colors adapted from CSS 2
+  Layout/components preserved from CSS 1
+*/
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #faf9f7;
+    color: #1c1917;
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #faf9f7;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #d6b8a0;
+    border-radius: 99px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a8765a;
+  }
+}
+
+@layer components {
+
+  /* ─── App shell ───────────────────────────────── */
+  .app-shell {
+    @apply flex h-screen overflow-hidden;
+    background-color: #faf9f7;
+  }
+  /* ─── Sidebar — CSS 1 layout + CSS 2 colors ─── */
+  .sidebar {
+    @apply flex flex-col items-center py-5 gap-1 flex-shrink-0
+           h-screen transition-all duration-200 ease-in-out;
+
+    /* CSS 1 expanding sidebar behavior */
+    background: #5c1a27;
+    border-right: 1px solid #78350f;
+  }
+
+  .nav-icon-btn {
+    @apply w-full h-10 flex items-center px-3.5 gap-3 rounded-xl
+           transition-all duration-150 cursor-pointer;
+
+    /* CSS 2 light/warm sidebar text */
+    color: rgba(255,255,255,0.55);
+  }
+
+  .nav-icon-btn:hover {
+    color: #ffffff;
+    background: rgba(255,255,255,0.1);
+  }
+
+  .nav-icon-btn.active {
+    background: rgba(255,255,255,0.18);
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .nav-icon-btn.active:hover {
+    background: rgba(255,255,255,0.22);
+    color: #ffffff;
+  }
+  
+
+  /* ─── Main area ───────────────────────────────── */
+  .main-area {
+    @apply flex-1 flex flex-col min-w-0 overflow-hidden;
+  }
+
+  /* ─── Top bar ─────────────────────────────────── */
+   .topbar {
+    @apply flex items-center gap-4 px-6 py-3 bg-white border-b flex-shrink-0;
+    border-color: #f3ebe8;
+    box-shadow: 0 1px 3px 0 rgba(120,53,15,0.08);
+    min-height: 68px;
+  }
+  /* ─── Content area ────────────────────────────── */
+  .content-area {
+    @apply flex-1 overflow-y-auto px-6 pb-8 pt-5;
+  }
+
+  /* ─── Base card ───────────────────────────────── */
+  .card {
+    @apply bg-white rounded-2xl border;
+    border-color: #f0e6e0;
+    box-shadow: 0 1px 4px 0 rgba(120,53,15,0.07);
+  }
+
+  .card-p {
+    @apply bg-white rounded-2xl border p-5;
+    border-color: #f0e6e0;
+    box-shadow: 0 1px 4px 0 rgba(120,53,15,0.07);
+  }
+
+  /* ─── Accent gradient cards ───────────────────── */
+
+  /* Burgundy */
+  .card-burg {
+    @apply rounded-2xl p-5 text-white;
+    background: linear-gradient(135deg, #7c2d3e 0%, #9f1239 100%);
+    box-shadow: 0 4px 18px 0 rgba(124,45,62,0.35);
+  }
+
+  /* Brown */
+  .card-brown {
+    @apply rounded-2xl p-5 text-white;
+    background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
+    box-shadow: 0 4px 18px 0 rgba(120,53,15,0.30);
+  }
+
+  /* Amber-warm */
+  .card-amber {
+    @apply rounded-2xl p-5 text-white;
+    background: linear-gradient(135deg, #b45309 0%, #d97706 100%);
+    box-shadow: 0 4px 18px 0 rgba(180,83,9,0.28);
+  }
+
+  /* Sage-green */
+  .card-sage {
+    @apply rounded-2xl p-5 text-white;
+    background: linear-gradient(135deg, #3d6b4a 0%, #4a7c59 100%);
+    box-shadow: 0 4px 18px 0 rgba(61,107,74,0.28);
+  }
+
+  /* Warm charcoal */
+  .card-char {
+    @apply rounded-2xl p-5 text-white;
+    background: linear-gradient(135deg, #292524 0%, #44403c 100%);
+    box-shadow: 0 4px 18px 0 rgba(41,37,36,0.25);
+  }
+
+  /* Rose-blush */
+  .card-blush {
+    @apply rounded-2xl p-5 text-white;
+    background: linear-gradient(135deg, #be123c 0%, #e11d48 100%);
+    box-shadow: 0 4px 18px 0 rgba(190,18,60,0.28);
+  }
+
+  /* ─── Soft tint cards ─────────────────────────── */
+
+  .tint-burg {
+    @apply rounded-2xl p-5 border;
+    background: #fff1f2;
+    border-color: #ffe4e6;
+  }
+
+  .tint-brown {
+    @apply rounded-2xl p-5 border;
+    background: #fff7ed;
+    border-color: #ffedd5;
+  }
+
+  .tint-amber {
+    @apply bg-amber-50 rounded-2xl p-5 border border-amber-100;
+  }
+
+  .tint-sage {
+    @apply rounded-2xl p-5 border;
+    background: #ecfdf5;
+    border-color: #d1fae5;
+  }
+
+  .tint-warm {
+    @apply rounded-2xl p-5 border;
+    background: #fafaf9;
+    border-color: #e7e5e4;
+  }
+
+  /* ─── Buttons ─────────────────────────────────── */
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold
+           rounded-xl text-white transition-all duration-150
+           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-400
+           cursor-pointer;
+
+    background: linear-gradient(135deg, #7c2d3e, #9f1239);
+    box-shadow: 0 3px 12px 0 rgba(124,45,62,0.35);
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.1);
+  }
+
+  .btn-brown {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold
+           rounded-xl text-white transition-all duration-150 cursor-pointer;
+
+    background: linear-gradient(135deg, #78350f, #92400e);
+    box-shadow: 0 3px 12px 0 rgba(120,53,15,0.30);
+  }
+
+  .btn-brown:hover {
+    filter: brightness(1.1);
+  }
+
+  .record-decision-btn {
+    background: #9f1239;
+  }
+
+  .record-decision-btn:hover {
+    background: #7c2d3e;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-white
+           text-stone-700 text-sm font-semibold rounded-xl border
+           transition-colors hover:bg-stone-50 focus:outline-none cursor-pointer;
+
+    border-color: #e7dad4;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium
+           text-stone-500 rounded-xl hover:bg-stone-100
+           hover:text-stone-800 transition-colors cursor-pointer;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-white
+           text-sm font-semibold rounded-xl transition-all cursor-pointer;
+
+    background: linear-gradient(135deg, #9f1239, #be123c);
+  }
+
+  .btn-danger:hover {
+    filter: brightness(1.08);
+  }
+
+  /* ─── Typography ──────────────────────────────── */
+
+  .page-title {
+    @apply text-2xl font-bold tracking-tight;
+    color: #1c1917;
+  }
+
+  .section-title {
+    @apply text-base font-bold;
+    color: #292524;
+  }
+
+  .label {
+    @apply block text-sm font-semibold mb-1.5;
+    color: #57534e;
+  }
+
+  /* ─── Form controls ───────────────────────────── */
+
+  .input {
+    @apply w-full px-4 py-2.5 text-sm rounded-xl bg-white
+           placeholder-stone-400 text-stone-900 transition-all
+           focus:outline-none;
+
+    border: 1px solid #e7dad4;
+  }
+
+  .input:focus {
+    border-color: #9f1239;
+    box-shadow: 0 0 0 3px rgba(159,18,57,0.1);
+  }
+
+  .select {
+    @apply w-full px-4 py-2.5 text-sm rounded-xl bg-white
+           text-stone-900 transition-all focus:outline-none;
+
+    border: 1px solid #e7dad4;
+  }
+
+  .select:focus {
+    border-color: #9f1239;
+    box-shadow: 0 0 0 3px rgba(159,18,57,0.1);
+  }
+
+  /* ─── Table ───────────────────────────────────── */
+
+  .table-header {
+    @apply text-xs font-bold uppercase tracking-wider px-4 py-3
+           text-left whitespace-nowrap;
+
+    background: #fdf8f5;
+    color: #a8765a;
+  }
+
+  .table-cell {
+    @apply px-4 py-3 text-sm border-b;
+    color: #44403c;
+    border-color: #faf5f2;
+  }
+
+  .table-row {
+    @apply transition-colors duration-100;
+  }
+
+  .table-row:hover {
+    background: #fdf5f0;
+  }
+
+  /* ─── Search pill ─────────────────────────────── */
+
+  .search-pill {
+    @apply flex items-center gap-2.5 px-4 py-2 rounded-xl
+           text-sm transition-colors cursor-text;
+
+    background: #f5ede8;
+    color: #a8765a;
+  }
+
+  .search-pill:hover {
+    background: #eee0d8;
+  }
+
+  /* ─── Progress ────────────────────────────────── */
+
+  .progress-track {
+    @apply h-2 rounded-full overflow-hidden;
+    background: #f0e6e0;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  /* ─── Tab pills ───────────────────────────────── */
+
+  .tab-pill {
+    @apply px-4 py-2 rounded-xl text-sm font-semibold
+           transition-all cursor-pointer;
+
+    color: #a8765a;
+  }
+
+  .tab-pill:hover {
+    background: #fdf5f0;
+    color: #7c2d3e;
+  }
+
+  .tab-pill.active {
+    background: linear-gradient(135deg, #7c2d3e, #9f1239);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(124,45,62,0.3);
+  }
+
+  /* ─── Badge base ──────────────────────────────── */
+
+  .badge {
+    @apply inline-flex items-center rounded-full text-xs font-semibold;
+  }
+
+  /* ─── Submit Claim two-column grid ───────────── */
+
+  .submit-claim-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .upload-documents-dropzone {
+    animation: upload-zone-pulse 3s ease-in-out infinite;
+  }
+
+  .upload-documents-dropzone:hover {
+    animation-play-state: paused;
+  }
+
+  .upload-document-character {
+    animation: upload-document-dance 1.8s ease-in-out infinite;
+    transform-origin: 50% 85%;
+  }
+
+  @keyframes upload-document-dance {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-3px) rotate(-6deg); }
+    50% { transform: translateY(0) rotate(0deg); }
+    75% { transform: translateY(-3px) rotate(6deg); }
+  }
+
+  @keyframes upload-zone-pulse {
+    0%, 100% {
+      border-color: #e7dad4;
+      box-shadow: 0 0 0 0 rgba(159,18,57,0);
+    }
+    50% {
+      border-color: #c08497;
+      box-shadow: 0 0 0 4px rgba(159,18,57,0.06);
+    }
+  }
+
+  @media (min-width: 900px) {
+    .submit-claim-grid {
+      grid-template-columns: 7fr 13fr;
+    }
+  }
+}
+
+/* ─── Existing utility color mapping ─────────────────────────────
+   Visual-only aliases for page-level utilities. Layout and behavior
+   remain owned by the existing component classes above. */
+@layer utilities {
+  .bg-slate-50 { background-color: #faf9f7 !important; }
+  .bg-slate-100 { background-color: #f5ede8 !important; }
+  .bg-slate-200 { background-color: #e7dad4 !important; }
+  .bg-slate-900 { background-color: #1c0f12 !important; }
+  .text-slate-900 { color: #1c1917 !important; }
+  .text-slate-800 { color: #292524 !important; }
+  .text-slate-700 { color: #44403c !important; }
+  .text-slate-600 { color: #57534e !important; }
+  .text-slate-500,
+  .text-slate-400 { color: #a8765a !important; }
+  .border-slate-50 { border-color: #faf5f2 !important; }
+  .border-slate-100 { border-color: #f0e6e0 !important; }
+  .border-slate-200 { border-color: #e7dad4 !important; }
+  .divide-slate-50 > :not([hidden]) ~ :not([hidden]),
+  .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #faf5f2 !important;
+  }
+  .hover\:bg-slate-50:hover { background-color: #fdf5f0 !important; }
+  .hover\:bg-slate-100:hover { background-color: #f5ede8 !important; }
+  .hover\:text-slate-700:hover { color: #7c2d3e !important; }
+
+  .bg-blue-50 { background-color: #fff1f2 !important; }
+  .bg-blue-100 { background-color: #ffe4e6 !important; }
+  .text-blue-500 { color: #be123c !important; }
+  .text-blue-600 { color: #9f1239 !important; }
+  .text-blue-700 { color: #7c2d3e !important; }
+  .border-blue-100 { border-color: #ffe4e6 !important; }
+  .border-blue-200 { border-color: #fecdd3 !important; }
+  .border-blue-500 { border-color: #be123c !important; }
+  .border-blue-600 { border-color: #9f1239 !important; }
+  .hover\:bg-blue-50:hover { background-color: #fdf5f0 !important; }
+  .hover\:bg-blue-100:hover { background-color: #ffe4e6 !important; }
+  .hover\:text-blue-600:hover { color: #7c2d3e !important; }
+  .hover\:text-blue-700:hover { color: #7c2d3e !important; }
+  .focus\:border-blue-600:focus { border-color: #9f1239 !important; }
+  .focus\:ring-blue-100:focus { --tw-ring-color: rgba(159,18,57,0.1) !important; }
+  .focus\:ring-blue-500:focus { --tw-ring-color: rgba(159,18,57,0.25) !important; }
+
+  .text-rose-500 { color: #be123c !important; }
+  .text-rose-600 { color: #9f1239 !important; }
+  .text-rose-700,
+  .text-rose-800,
+  .text-rose-900 { color: #7c2d3e !important; }
+  .border-rose-200 { border-color: #fecdd3 !important; }
+  .border-rose-300 { border-color: #fda4af !important; }
+  .bg-rose-50 { background-color: #fff1f2 !important; }
+  .bg-rose-100 { background-color: #ffe4e6 !important; }
+
+  [style*="linear-gradient(90deg,#DC2626"] {
+    background: #9f1239 !important;
+  }
+  [style*="color: #DC2626"] {
+    color: #9f1239 !important;
+  }
+
+  /* Topbar visual treatment from the warm reference theme. */
+  .topbar > div:first-child > div:first-child {
+    background: #5c1a27 !important;
+  }
+  .topbar .search-pill {
+    background: #f5ede8 !important;
+    color: #a8765a !important;
+  }
+  .topbar .search-pill:hover {
+    background: #eee0d8 !important;
+  }
+  .topbar button[style*="#F1F5F9"] {
+    background: #f5ede8 !important;
+    color: #92400e !important;
+  }
+  .topbar button[style*="#F1F5F9"]:hover {
+    background: #eee0d8 !important;
+    color: #7c2d3e !important;
+  }
+  .topbar button > div[style*="linear-gradient"] {
+    background: #7c2d3e !important;
+  }
+
+  .bg-indigo-50,
+  .bg-violet-50 { background-color: #fdf1f3 !important; }
+  .text-indigo-600,
+  .text-violet-600 { color: #9f1239 !important; }
+  .border-indigo-200,
+  .border-violet-200 { border-color: #fecdd3 !important; }
+
+  .bg-teal-50 { background-color: #ecfdf5 !important; }
+  .text-teal-500,
+  .text-teal-600,
+  .text-teal-700 { color: #3d6b4a !important; }
+  .border-teal-100,
+  .border-teal-200 { border-color: #d1fae5 !important; }
+  .hover\:bg-teal-50:hover { background-color: #ecfdf5 !important; }
+
+  /* The sidebar panel is fixed by the existing JSX; this changes only
+     its painted colors while retaining its current expansion classes. */
+  .app-shell > aside > div {
+    background: #5c1a27 !important;
+    border-color: #78350f !important;
+  }
+  .app-shell > aside .text-slate-900,
+  .app-shell > aside .text-slate-800 { color: #ffffff !important; }
+  .app-shell > aside .text-slate-400 { color: rgba(255,255,255,0.55) !important; }
+  .app-shell > aside .border-slate-200 { border-color: rgba(255,255,255,0.2) !important; }
+  .app-shell > aside .bg-white { background-color: #5c1a27 !important; }
+  .app-shell > aside .bg-rose-600 { background-color: rgba(255,255,255,0.16) !important; }
+
+  /* Repaint legacy inline blue visual values without changing JSX. */
+  [style*="rgba(37,99,235"] {
+    box-shadow: 0 4px 12px rgba(92,26,39,0.25) !important;
+  }
+  [style*="rgba(219,234,254"] { color: rgba(255,241,242,0.85) !important; }
+
+  /* Login and signup panels retain their existing markup and dimensions. */
+  [style*="#1e3a8a"] {
+    background: linear-gradient(135deg, #78350f, #5c1a27) !important;
+  }
+
+  .bg-slate-900[style*="#1e3a8a"] {
+    background: linear-gradient(135deg, #78350f 0%, #5c1a27 100%) !important;
+  }
+}
