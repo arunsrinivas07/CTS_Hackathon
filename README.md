@@ -171,9 +171,13 @@ GROQ_API_KEY=your_groq_api_key
 | **ML Inference** | `POST /api/v1/ml/predict` | Single claim ML fraud risk prediction |
 | **ML Inference** | `POST /api/v1/ml/predict_batch` | Multi-claim provider-level fraud scoring |
 | **Copilot** | `POST /api/v1/copilot/chat` | RAG query against CMS knowledge base |
-| **Investigations**| `GET /api/v1/agentic-investigations/{id}`| Fetch automated agentic trace & evidence |
-
 ---
 
-## 📄 License
-This project is licensed under the **MIT License**.
+## ☁️ AWS Cloud Infrastructure & Deployment
+
+ClaimGuard AI is fully deployed on Amazon Web Services (AWS) using a high-availability microservices architecture:
+
+- **Frontend Application**: Built with React/Vite and static website hosting deployed on **AWS S3 + CloudFront** ([http://claimguard-frontend-prod.s3-website.ap-south-1.amazonaws.com](http://claimguard-frontend-prod.s3-website.ap-south-1.amazonaws.com)).
+- **Backend API Service**: High-performance FastAPI application deployed on an **AWS EC2** instance ([http://15.207.248.42](http://15.207.248.42)).
+- **Machine Learning Microservice**: Dockerized ML inference pipeline containerized and deployed on **AWS ECS (Elastic Container Service)** for scalable provider risk inference.
+- **Managed Database**: Production-grade **PostgreSQL** hosted on **AWS RDS** (`claimguard-db.cjiuk0qk4zkc.ap-south-1.rds.amazonaws.com:5432`).
