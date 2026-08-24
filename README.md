@@ -5,10 +5,57 @@ ClaimGuard AI is an enterprise-grade healthcare claims fraud detection, behavior
 
 ---
 
+## 🎥 Video Prototype & Demo
+
+[![Watch Prototype Video](https://img.youtube.com/vi/sSnHwhqKP6k/maxresdefault.jpg)](https://youtu.be/sSnHwhqKP6k?si=w7dbHq5-FdvQ_oHf)
+
+📺 **YouTube Video Prototype**: [https://youtu.be/sSnHwhqKP6k?si=w7dbHq5-FdvQ_oHf](https://youtu.be/sSnHwhqKP6k?si=w7dbHq5-FdvQ_oHf)
+
+---
+
+## 🏗️ System Architecture
+
+![Overall Architecture](images/architecture.jpeg)
+
+*Figure 1: ClaimGuard AI Overall System Architecture & Data Flow*
+
+---
+
+## 💻 Tech Stack
+
+![Tech Stack](images/techstack.png)
+
+*Figure 2: Component Breakdown & Technology Stack*
+
+### Tech Stack Details:
+- **Frontend**: React 18, Vite, Tailwind CSS, Recharts, Lucide Icons, Axios
+- **Backend**: Python 3.10+, FastAPI, Uvicorn, Pydantic, SQLAlchemy ORM
+- **Database & Vector Store**: PostgreSQL, ChromaDB (RAG Embeddings)
+- **AI & Machine Learning**: Scikit-Learn, XGBoost, LightGBM, Groq LLM API, PyPDF2 / pdfplumber
+- **Cloud Deployment**: AWS EC2 Deployment (`http://15.207.248.42`)
+
+---
+
+## 📸 Application Screenshots
+
+<div align="center">
+  <img src="images/1.png" alt="Provider Dashboard" width="48%" />
+  <img src="images/2.png" alt="Investigator Command Center" width="48%" />
+</div>
+
+<br/>
+
+<div align="center">
+  <img src="images/3.png" alt="AI Copilot & Investigation Workspace" width="48%" />
+  <img src="images/4.png" alt="Executive Analytics & Risk Matrix" width="48%" />
+</div>
+
+---
+
 ## 🌟 Key Features
 
 ### 👨‍⚕️ 1. Provider Portal
-- **Dynamic Time-Aware Greetings**: Personalized greetings based on local time (*Good Morning, Good Afternoon, Good Evening, Good Night*).
+- **Time-Aware Dynamic Greetings**: Personalized greetings matching local time (*Good Morning, Good Afternoon, Good Evening, Good Night*).
 - **Claim Submission & Tracking**: Streamlined claim filing interface with real-time status updates and document attachments.
 - **Facility Analytics**: Visual breakdown of total billed amounts, approval rates, and pending review counts.
 
@@ -26,54 +73,20 @@ ClaimGuard AI is an enterprise-grade healthcare claims fraud detection, behavior
 
 ---
 
-## 🛠️ Architecture & Tech Stack
+## 🌐 Environment Configuration
 
-```
-ClaimGuard AI
-├── Frontend (React 18 + Vite + Tailwind CSS)
-│   ├── Component-Driven UI & Lucide Icons
-│   ├── Interactive Recharts (Bar, Pie, Workload, Risk Meters)
-│   └── Context API State & API Client
-│
-└── Backend (FastAPI + Python 3.10+)
-    ├── REST API Router Architecture (/api/v1)
-    ├── Machine Learning Inference Pipeline (XGBoost / LightGBM V2)
-    ├── Agentic RAG Engine (ChromaDB + Groq LLM + CMS Knowledge Base)
-    └── Database & ORM (PostgreSQL + SQLAlchemy)
+### Frontend Configuration (`frontend/.env`)
+Configured to point to the AWS EC2 production backend endpoint:
+```env
+VITE_API_URL=http://15.207.248.42
 ```
 
-### Stack Breakdown:
-- **Frontend**: React 18, Vite, Tailwind CSS, Recharts, Lucide React, Axios / Fetch API
-- **Backend Framework**: Python 3.10+, FastAPI, Uvicorn, Pydantic
-- **Database & Storage**: PostgreSQL, SQLAlchemy ORM, ChromaDB (Vector DB)
-- **Machine Learning & AI**: Scikit-Learn, XGBoost, Pandas, NumPy, Groq API (LLM Agent), PyPDF2 / pdfplumber
-
----
-
-## 📁 Repository Structure
-
-```
-ClaimGuard/
-├── backend/
-│   ├── app/
-│   │   ├── config.py             # Application settings & environment variables
-│   │   ├── database.py           # Database connection & session setup
-│   │   ├── models/               # SQLAlchemy ORM database models
-│   │   ├── routers/              # FastAPI endpoints (Claims, ML, Copilot, Users, etc.)
-│   │   ├── services/             # ML inference, Agentic RAG, and PDF processing logic
-│   │   └── seed.py               # Database initial seeder script
-│   ├── main.py                   # FastAPI application entry point & startup lifecycle
-│   └── requirements.txt          # Python dependencies
-├── frontend/
-│   ├── src/
-│   │   ├── components/           # Reusable UI widgets, charts, & investigator tools
-│   │   ├── context/              # React Context (Auth, Investigation state)
-│   │   ├── pages/                # Role-specific dashboards (Provider, Investigator, Admin)
-│   │   └── services/             # Axios API service handlers
-│   ├── package.json              # NPM dependencies & scripts
-│   └── vite.config.js            # Vite configuration
-├── .gitignore                    # Project-level git exclusion rules
-└── README.md                     # Project documentation
+### Backend Configuration (`backend/.env`)
+Configured to run locally on your development machine:
+```env
+DATABASE_URL=postgresql://postgres:password@localhost:5432/claimguard
+SECRET_KEY=claimguard_super_secret_jwt_key_2026_production
+GROQ_API_KEY=your_groq_api_key
 ```
 
 ---
@@ -83,11 +96,11 @@ ClaimGuard/
 ### 1. Prerequisites
 - **Python**: 3.10 or higher
 - **Node.js**: 18.x or higher
-- **PostgreSQL**: Local or remote instance (e.g., `claimguard_db`)
+- **PostgreSQL**: Local or remote database instance
 
 ---
 
-### 2. Backend Setup
+### 2. Backend Setup (Localhost)
 
 1. Navigate to the `backend` directory:
    ```bash
@@ -110,27 +123,20 @@ ClaimGuard/
    pip install -r requirements.txt
    ```
 
-4. Configure environment variables in `backend/.env`:
-   ```env
-   DATABASE_URL=postgresql://postgres:password@localhost:5432/claimguard_db
-   GROQ_API_KEY=your_groq_api_key_here
-   SECRET_KEY=your_jwt_secret_key
-   ```
-
-5. Run the FastAPI development server:
+4. Run the local FastAPI development server:
    ```bash
    uvicorn main:app --reload --port 8000
    ```
 
-6. Open interactive API Documentation:
-   - **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
-   - **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+5. Open interactive API Documentation:
+   - **Local Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
+   - **AWS AWS Swagger UI**: [http://15.207.248.42/docs](http://15.207.248.42/docs)
 
 ---
 
 ### 3. Frontend Setup
 
-1. Open a new terminal and navigate to the `frontend` directory:
+1. Navigate to the `frontend` directory:
    ```bash
    cd frontend
    ```
@@ -140,22 +146,17 @@ ClaimGuard/
    npm install
    ```
 
-3. Configure environment variables in `frontend/.env`:
-   ```env
-   VITE_API_BASE_URL=http://localhost:8000/api/v1
-   ```
-
-4. Start the frontend development server:
+3. Start the frontend development server:
    ```bash
    npm run dev
    ```
 
-5. Access the application in your web browser:
-   - **URL**: [http://localhost:5173](http://localhost:5173)
+4. Access the application in your web browser:
+   - **Local URL**: [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## 🔌 API Key Routes Summary (`/api/v1`)
+## 🔌 API Core Routes Summary (`/api/v1`)
 
 | Module | Endpoint | Description |
 | :--- | :--- | :--- |
@@ -166,12 +167,6 @@ ClaimGuard/
 | **ML Inference** | `POST /api/v1/ml/predict_batch` | Multi-claim provider-level fraud scoring |
 | **Copilot** | `POST /api/v1/copilot/chat` | RAG query against CMS knowledge base |
 | **Investigations**| `GET /api/v1/agentic-investigations/{id}`| Fetch automated agentic trace & evidence |
-
----
-
-## 🔒 Security & Best Practices
-- Sensitive configuration files (`.env`), SSL keys (`*.pem`), and log files are excluded from Git via `.gitignore`.
-- Database password and API tokens should be managed via environment variables.
 
 ---
 
