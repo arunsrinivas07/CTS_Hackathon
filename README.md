@@ -134,7 +134,7 @@ GROQ_API_KEY=your_groq_api_key
 
 5. Open interactive API Documentation:
    - **Local Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
-   - **AWS AWS Swagger UI**: [http://15.207.248.42/docs](http://15.207.248.42/docs)
+   - **AWS Backend Swagger UI**: [http://15.207.248.42/docs](http://15.207.248.42/docs)
 
 ---
 
@@ -156,7 +156,8 @@ GROQ_API_KEY=your_groq_api_key
    ```
 
 4. Access the application in your web browser:
-   - **Local URL**: [http://localhost:5173](http://localhost:5173)
+   - **Live Deployed Application**: [http://claimguard-frontend-prod.s3-website.ap-south-1.amazonaws.com](http://claimguard-frontend-prod.s3-website.ap-south-1.amazonaws.com)
+   - **Local Development URL**: [http://localhost:5173](http://localhost:5173)
 
 ---
 
