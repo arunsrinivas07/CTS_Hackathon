@@ -1,0 +1,31 @@
+# ── Core FastAPI & Database ───────────────────────────────────────
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+python-dotenv
+pydantic[email]
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+alembic
+
+# ── Agent/Copilot/RAG dependencies ─────────────────────────────────
+chromadb
+sentence-transformers
+torch
+groq
+httpx
+rank-bm25
+
+# ── ML/Data Science packages ───────────────────────────────────────
+numpy
+pandas
+scikit-learn
+xgboost
+
+# ── PDF Processing & OCR ───────────────────────────────────────────
+Pillow
+PyMuPDF
+pytesseract

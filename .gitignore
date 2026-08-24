@@ -1,0 +1,83 @@
+# Secrets & Keys
+*.pem
+*.key
+.env
+.env.*
+env.txt
+claimguard-ml.pem
+
+# Archives & Large Files
+*.zip
+backend.zip
+*.csv
+*.xlsx
+*.xls
+*.pdf
+*.pkl
+*.joblib
+backend/app/ml/data/
+backend/app/knowledge_base/cms/
+
+# Python & Virtual Environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+venv/
+.venv/
+env/
+ENV/
+
+# Node & Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+
+# Databases & Vector Stores
+chroma_db/
+backend/chroma_db/
+
+# IDE & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Deployment Scripts & Documents
+AWS_DEPLOYMENT_GUIDE.md
+CMS_Provider_Claim_Document.pdf
+DATABASE_INTEGRATION_COMPLETE.txt
+EC2_DEPLOYMENT_STEP_BY_STEP.md
+EC2_ML_SERVICE_CONFIRMED.md
+EC2_TROUBLESHOOTING.md
+FIXES_SUMMARY.md
+GROQ_API_FIX_SUMMARY.md
+ML_DUPLICATE_FIX.md
+ML_INTEGRATION_QUICK_REF.md
+PATIENT_LASTNAME_FIX.md
+PHASE1_COMPLETE.md
+QUICK_DEPLOY_COMMANDS.txt
+QUICK_START.md
+SETUP_BACKEND.md
+START_APP_NOW.md
+SUMMARY_ML_FIX.txt
+UI_INTEGRATION_COMPLETE.md
+deploy_frontend.sh
+deploy_to_ec2.ps1
+setup_ec2.sh
+START_SERVERS.bat
+
+# Temp Logs, Traces & Data Dumps
+*.log
+agentic_openapi.json
+database_schema_report.json
+investigation_trace.txt
+main_openapi.json
+sampMedium2.txt
+sampleLow.txt
+samplehigh2.txt
+verify_phase1_components.py
+view_file_logs.json

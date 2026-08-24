@@ -1,0 +1,123 @@
+{
+  "model": "Model C \u2014 PDE Anomaly Detection",
+  "description": "Separate PDE-only model; not combined with Model B medical claims",
+  "algorithm": "IsolationForest",
+  "trained_at": "2026-08-20T12:30:46.912458+00:00",
+  "training_row_count": 501190,
+  "test_row_count": 14330,
+  "feature_count": 32,
+  "feature_columns": [
+    "YEAR",
+    "QTY_DSPNSD_NUM",
+    "DAYS_SUPLY_NUM",
+    "FILL_NUM",
+    "TOT_RX_CST_AMT",
+    "PTNT_PAY_AMT",
+    "CVRD_D_PLAN_PD_AMT",
+    "NCVRD_PLAN_PD_AMT",
+    "GDC_BLW_OOPT_AMT",
+    "GDC_ABV_OOPT_AMT",
+    "OTHR_TROOP_AMT",
+    "LICS_AMT",
+    "PLRO_AMT",
+    "COST_PER_UNIT",
+    "COST_PER_DAY",
+    "PATIENT_PAYMENT_RATIO",
+    "PLAN_PAYMENT_RATIO",
+    "QUANTITY_PER_DAY",
+    "DAYS_SUPPLY",
+    "REFILL_FREQUENCY",
+    "BENE_PREV_RX_COUNT",
+    "BENE_PREV_RX_COST",
+    "BENE_PREV_AVG_RX_COST",
+    "BENE_PREV_MAX_RX_COST",
+    "BENE_RX_30D",
+    "BENE_RX_COST_30D",
+    "BENE_RX_90D",
+    "BENE_RX_COST_90D",
+    "PRESCRIBER_RX_COUNT",
+    "PRESCRIBER_AVG_RX_COST",
+    "PRESCRIBER_MAX_RX_COST",
+    "PRESCRIBER_UNIQUE_BENEFICIARIES"
+  ],
+  "training_period": {
+    "years": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022
+    ],
+    "year_min": 2015,
+    "year_max": 2022,
+    "description": "YEAR <= 2022"
+  },
+  "test_period": {
+    "years": [
+      2023
+    ],
+    "year_min": 2023,
+    "year_max": 2023,
+    "description": "YEAR == 2023 (held out, never used in training)"
+  },
+  "random_seed": 42,
+  "n_estimators": 300,
+  "contamination": "auto",
+  "training_anomaly_rate_pct": 7.4058,
+  "training_score_mean": -0.424077,
+  "training_score_std": 0.051284,
+  "training_score_min": -0.751099,
+  "training_score_max": -0.350538,
+  "model_parameters": {
+    "n_estimators": 300,
+    "contamination": "auto",
+    "random_state": 42,
+    "n_jobs": -1,
+    "max_samples": 256
+  },
+  "preprocessing": {
+    "step_1": {
+      "name": "SimpleImputer",
+      "strategy": "median",
+      "note": "Fitted on PDE training data only (YEAR <= 2022)"
+    },
+    "step_2": {
+      "name": "StandardScaler",
+      "with_mean": true,
+      "with_std": true,
+      "note": "Fitted on imputed PDE training data only"
+    },
+    "step_3": {
+      "name": "IsolationForest",
+      "n_estimators": 300,
+      "contamination": "auto",
+      "random_state": 42,
+      "n_jobs": -1,
+      "note": "Fitted on scaled PDE training data only"
+    }
+  },
+  "leakage_prevention": {
+    "imputer_fitted_on": "PDE training data only (YEAR <= 2022)",
+    "scaler_fitted_on": "PDE training data only (YEAR <= 2022)",
+    "iforest_fitted_on": "PDE training data only (YEAR <= 2022)",
+    "test_data_loaded_in_train": false,
+    "bene_history_source": "strictly prior PDE rows only (validated)",
+    "prescriber_history_source": "strictly prior PDE rows only (validated)",
+    "no_medical_claims_mixed_in": true
+  },
+  "artefacts": {
+    "isolation_forest": "models/model_c_pde/isolation_forest.pkl",
+    "imputer": "models/model_c_pde/imputer.pkl",
+    "scaler": "models/model_c_pde/scaler.pkl",
+    "feature_columns": "models/model_c_pde/feature_columns.pkl"
+  },
+  "data_sources": {
+    "pde_features": "data/processed/pde/pde_features.csv",
+    "raw_pde": "data/raw/pde/pde.csv",
+    "test_held_out": "YEAR == 2023 rows from pde_features.csv (NOT USED IN TRAINING)"
+  },
+  "total_training_time_sec": 17.58
+}
