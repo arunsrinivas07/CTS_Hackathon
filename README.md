@@ -1,4 +1,4 @@
-# ClaimGuard AI 🛡️⚕️
+# ClaimGuard AI
 ### AI-Powered Healthcare Fraud, Waste, & Abuse (FWA) Detection Platform
 
 ClaimGuard AI is an enterprise-grade healthcare claims fraud detection, behavioral inference, and investigation platform. Designed for insurers, CMS compliance teams, and clinical investigators, ClaimGuard leverages advanced machine learning (Medicare Provider-Level Fraud Detection V2), agentic AI copilots (RAG with ChromaDB & Groq LLM), and real-time behavioral telemetry to identify anomalous billing patterns before reimbursement.
