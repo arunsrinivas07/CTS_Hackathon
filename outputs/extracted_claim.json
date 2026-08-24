@@ -1,0 +1,24 @@
+{
+    "extracted_features": {
+        "transaction_type": "MEDICAL_CLAIM",
+        "claim_id": "SYN-CLM-2026-001247",
+        "bene_id": "SYN-BENE-782341",
+        "provider_id": "SYN-PROV-10482",
+        "at_physn_npi": null,
+        "claim_type": "Synthetic Institutional / Hospital Claim",
+        "claim_start_date": "2026-08-12",
+        "claim_end_date": "2026-08-14",
+        "clm_pmt_amt": 3360.0,
+        "clm_tot_chrg_amt": 5740.0,
+        "line_count": null,
+        "diag_count": 1,
+        "proc_count": null,
+        "state": "NY"
+    },
+    "missing_features": [
+        "at_physn_npi",
+        "line_count",
+        "proc_count"
+    ],
+    "manual_input_required": true
+}
