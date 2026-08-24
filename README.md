@@ -5,6 +5,10 @@ ClaimGuard AI is an enterprise-grade healthcare claims fraud detection, behavior
 
 ---
 
+🌐 **Live Application Deployment**: [http://claimguard-frontend-prod.s3-website.ap-south-1.amazonaws.com](http://claimguard-frontend-prod.s3-website.ap-south-1.amazonaws.com)
+
+---
+
 ## 🎥 Video Prototype & Demo
 
 [![Watch Prototype Video](https://img.youtube.com/vi/sSnHwhqKP6k/maxresdefault.jpg)](https://youtu.be/sSnHwhqKP6k?si=w7dbHq5-FdvQ_oHf)
